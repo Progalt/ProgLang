@@ -6,3 +6,20 @@ import "std:io" as std;
 func helloWorld() {
     std.println("Hello World!");
 }
+
+class HelloClass {
+
+    construct() {
+        self.x = 100; 
+    }
+
+    func print() {
+        var v = self.x; 
+        println("Hello $v");
+    }
+
+}
+
+var hello = HelloClass();
+
+hello.print(); 

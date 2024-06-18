@@ -10,4 +10,4 @@ std.println("The square root of $x is $y");
 
 var xc = std.cos(x); 
 
-std.println("Cos of x is $xc");
+std.println("cos of $x is $xc");
