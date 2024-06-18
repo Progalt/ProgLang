@@ -30,20 +30,6 @@ test.helloWorld();
 
 	script::VM vm(createInfo);
 
-	vm.AddNativeFunction("Dictionary", [&](int argCount, script::Value* args)
-		{
-			return script::Value(script::AllocateDictionary());
-		}, 0);
-
-	vm.AddNativeFunction("List", [&](int argCount, script::Value* args)
-		{
-			return script::Value(script::AllocateArray({}));
-		}, 0);
-
-	vm.AddNativeFunction("sqrt", [&](int argCount, script::Value* args)
-		{
-			return script::Value(sqrt(args[0].ToNumber()));
-		}, 1);
 
 	vm.AddNativeFunction("clock", [&](int argCount, script::Value* args)
 		{

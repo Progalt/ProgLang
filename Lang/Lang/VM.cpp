@@ -21,6 +21,9 @@ namespace script
         {
             m_IOInterface = createInfo.ioInterface;
         }
+
+        // Load the standard stuff that the language needs
+        LoadStdPrimitives(this);
     }
 
     VM::~VM()
@@ -494,12 +497,6 @@ namespace script
                     break;
                 }
 
-                if (!stackObj.IsObjType(OBJ_INSTANCE))
-                {
-                    Error("Get field: Only instances of classes can have fields");
-                    return INTERPRET_RUNTIME_ERROR;
-                }
-
                 // `nly instances can have fields
                 ObjInstance* instance = (ObjInstance*)obj;
 
@@ -513,7 +510,7 @@ namespace script
                     break;
                 }
 
-                Error("Field does not exist in instance of class: " + std::string(name->str));
+                Error("Field does not exist in instance: " + std::string(name->str));
                 return INTERPRET_RUNTIME_ERROR;
 
                 break;

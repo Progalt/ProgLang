@@ -10,6 +10,7 @@ set (SOURCES
     "Lang/Value.cpp"
     "Lang/VM.cpp"
     "Lang/Libraries/std.cpp"
+    "Lang/Libraries/web.cpp"
 )
 
 add_library(ProgLang ${SOURCES})

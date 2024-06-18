@@ -200,4 +200,18 @@ namespace script
         mdl->AddNativeFunction("sqrt", sqrtNative, 1);
         mdl->AddNativeFunction("cbrt", cbrtNative, 1);
     }
+
+    auto dictionaryFunc = [&](int argc, Value* args) {
+        return script::Value(script::AllocateDictionary());
+    };
+
+    auto listFunc = [&](int argc, Value* args) {
+        return script::Value(script::AllocateArray({}));
+    };
+
+    void LoadStdPrimitives(VM* vm)
+    {
+        vm->AddNativeFunction("Dictionary", dictionaryFunc, 0);
+        vm->AddNativeFunction("List", listFunc, 0);
+    }
 }

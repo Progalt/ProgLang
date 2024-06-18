@@ -32,7 +32,9 @@ namespace script
 
 		OBJ_MODULE, 
 
-		OBJ_FIBER
+		OBJ_FIBER,
+
+		OBJ_USER_DATA, 
 	};
 
 	
@@ -194,6 +196,18 @@ namespace script
 	};
 
 	ObjModule* CreateModule(ObjString* name);
+
+	class ObjUserData : public Object
+	{
+	public:
+
+		void Delete() override; 
+
+		void* userData;
+		std::function<void(void*)> destructor;
+	};
+
+	ObjUserData* CreateUserData();
 
 	struct CallFrame
 	{

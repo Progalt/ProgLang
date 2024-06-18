@@ -241,4 +241,17 @@ namespace script
 		methods[name] = Value(NewNativeFunction(func, arity));
 	}
 
+	void ObjUserData::Delete() {
+		if (destructor)
+			destructor(userData);	
+	}
+
+	ObjUserData* CreateUserData()
+	{
+		ObjUserData* d = memoryManager.AllocateObject<ObjUserData>();
+		d->type = OBJ_USER_DATA;
+
+		return d;
+	}
+
 }
