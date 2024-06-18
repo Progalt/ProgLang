@@ -11,6 +11,15 @@ Some of the code is a bit messy and needs a rewrite in some areas but it's not t
 
 > A lot of the initial commits are in my private game engine repo not this one. If that goes public I will link to it here. 
 
+### Libraries
+
+The language has some built-in libraries. Typically these are native functions in C++ bound to the language so they are as fast as possible. 
+These include.
+
+- `std:io` - This is for IO including printing and basic user input. 
+- `std:maths` - This is your maths library mirroring most of the functions in C/C++ `math.h`. With some extra. 
+
+
 ### Project Structure
 
 `Lang/` - Contains the code for the interpreter. 

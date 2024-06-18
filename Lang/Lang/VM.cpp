@@ -828,7 +828,7 @@ namespace script
         std::string importName = asName.empty() ? name : asName;
 
         // Default modules 
-        if (name == "std:io")
+        if (name == "std:io" || name == "std:maths")
         {
             if (!asName.empty())
             {
@@ -848,14 +848,20 @@ namespace script
                    
                 }
 
-                LoadStdIO(this, mdl);
+                if (name == "std:io")
+                    LoadStdIO(this, mdl);
+                else if (name == "std:maths")
+                    LoadStdMaths(this, mdl);
 
                 // Load it into the current global
                 m_CurrentGlobal->operator[](asName) = Value(mdl);
                 return nullptr;
             }
 
-            LoadStdIO(this, nullptr);
+            if (name == "std:io")
+                LoadStdIO(this, nullptr);
+            else if (name == "std:maths")
+                LoadStdMaths(this, nullptr);
 
 
             return nullptr;

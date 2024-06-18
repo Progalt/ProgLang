@@ -1,0 +1,13 @@
+
+import "std:io" as std; 
+import "std:maths" as std; 
+
+var x = 25; 
+
+var y = std.sqrt(x);
+
+std.println("The square root of $x is $y");
+
+var xc = std.cos(x); 
+
+std.println("Cos of x is $xc");

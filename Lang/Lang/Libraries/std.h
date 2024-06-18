@@ -7,4 +7,6 @@ namespace script
     class VM;
 
     void LoadStdIO(VM* vm, ObjModule* mdl);
+
+    void LoadStdMaths(VM* vm, ObjModule* mdl);
 }

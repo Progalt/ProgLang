@@ -230,6 +230,6 @@ namespace script
 		size_t m_GreyStackOffset = 0;
 		std::vector<Object*> m_GreyStack;
 
-
+		
 	};
 }
