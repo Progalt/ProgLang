@@ -1,0 +1,35 @@
+
+import "std:io" as std; 
+
+var expectedName = "henry";
+
+std.println("Enter Name: ");
+var name;
+var maxTries = 3; 
+var tries = 0; 
+var correct = false; 
+
+while (name != expectedName and tries < maxTries) 
+{
+    name = std.input(); 
+
+    if (name != expectedName) {
+        std.println("That's not the name we want!");
+
+        var remaining = maxTries - tries - 1; 
+        std.println("Tries remaining: $remaining");
+    }
+    else {
+        correct = true; 
+    }
+
+    tries = tries + 1; 
+
+}
+
+if (correct) {
+    std.println("Hello $name");
+}
+else {
+    std.println("Oops!");
+}

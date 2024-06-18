@@ -1,0 +1,16 @@
+
+// Compile With:  F:\Dev\ProgLang\build\Cmd\Debug\LangCmd.exe test.lang
+
+import "std:io" as std; 
+
+func helloWorld() {
+
+    var x = 0; 
+    var y = 10;
+
+    var z = x + y; 
+
+    z = z ** 2; 
+
+    std.println(z);
+}
