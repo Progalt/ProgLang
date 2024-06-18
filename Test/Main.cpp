@@ -9,14 +9,10 @@ int main(int argc, char* argv[])
 
 	const std::string source =
 R"(
+import "F:/Dev/ProgLang/TestFiles/test" as test; 
 
-import "std:io" as std; 
 
-func helloWorld() {
-    std.println("Hello World!");
-}
-
-helloWorld();
+test.helloWorld();
 
 
 )";  

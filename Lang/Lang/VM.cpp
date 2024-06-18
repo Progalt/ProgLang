@@ -654,12 +654,12 @@ namespace script
 
                         // If we are within a module 
                         // We need to check if when we go up its another module or global
-                        if (m_ExecutingModule->caller)
-                        {
-                            m_CurrentGlobal = &m_ExecutingModule->caller->methods;
-                        }
-                        else 
-                            m_CurrentGlobal = &m_GlobalVariables;
+                        // if (m_ExecutingModule->caller)
+                        // {
+                        //     m_CurrentGlobal = &m_ExecutingModule->caller->methods;
+                        // }
+                        // else 
+                        //     m_CurrentGlobal = &m_GlobalVariables;
 
                         // Add the module thats finished executing to the current global scope of the next module or global of the main script 
                         m_CurrentGlobal->operator[](std::string(m_ExecutingModule->name->str)) = Value(m_ExecutingModule);
@@ -765,12 +765,17 @@ namespace script
                 }
 
                 bool moduleFunc = ((m_CurrentFiber->stack.m_Top) - argCount - 1)->IsObjType(OBJ_MODULE);
+                
 
                 Value result;
                 if (!moduleFunc)
                     result = func(argCount + 1, (m_CurrentFiber->stack.m_Top) - argCount - 1);
                 else 
+                {
+                    
                     result = func(argCount, (m_CurrentFiber->stack.m_Top) - argCount);
+
+                }
 
                 m_CurrentFiber->stack.m_Top -= argCount + 1;
 
@@ -778,8 +783,9 @@ namespace script
                 return true;
             }
             else
-            {
+            {   
                 return Call(bound->function, argCount);
+
             }
 
         }
@@ -859,13 +865,13 @@ namespace script
 
         // Check if the module is already loaded
         // TODO: This check isn't the best.. probably should fix it 
-        if (m_ExecutingModule == nullptr) 
-        {
+        //if (m_ExecutingModule == nullptr) 
+        //{
             if (m_Modules.find(importName) != m_Modules.end())
             {
                 return nullptr;
             }
-        }
+        //}
 
         if (!asName.empty())
         {

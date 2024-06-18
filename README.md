@@ -19,6 +19,9 @@ Some of the code is a bit messy and needs a rewrite in some areas but it's not t
 
 `Cmd/` - Contains the command line executable to run the lang from the command line. 
 
+### Dependencies
+
+The only dependency is the C++ stdlib. 
 
 ### Things that have helped me along the way
 

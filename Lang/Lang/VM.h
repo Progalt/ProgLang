@@ -1,7 +1,7 @@
 
 #pragma once
 
-// #define VM_DEBUG_ALLOCS
+#define VM_DEBUG_ALLOCS
 
 #include "Chunk.h"
 #include "Value.h"

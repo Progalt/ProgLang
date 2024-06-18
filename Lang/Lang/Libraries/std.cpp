@@ -24,7 +24,7 @@ namespace script
     auto nativeInput = [&](int argCount, Value* args)
     {
         std::string str; 
-        std::cin >> str;
+        std::getline(std::cin, str);
 
         return Value(memoryManager.AllocateString(str));
     };

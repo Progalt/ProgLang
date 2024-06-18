@@ -4,13 +4,5 @@
 import "std:io" as std; 
 
 func helloWorld() {
-
-    var x = 0; 
-    var y = 10;
-
-    var z = x + y; 
-
-    z = z ** 2; 
-
-    std.println(z);
+    std.println("Hello World!");
 }

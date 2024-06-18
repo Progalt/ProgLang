@@ -15,7 +15,7 @@ namespace script
 	{
 	public:
 
-		virtual const std::string& ReadFile(const std::string& filepath) = 0;
+		virtual std::string ReadFile(const std::string& filepath) = 0;
 
 		virtual void Print(const std::string& str) = 0;
 
@@ -26,9 +26,15 @@ namespace script
 	{
 	public:
 
-		const std::string& ReadFile(const std::string& filepath) override
+		std::string ReadFile(const std::string& filepath) override
 		{
 			std::ifstream t(filepath);
+
+			if (!t.is_open())
+			{
+				return "";
+			}
+
 			std::stringstream buffer;
 			buffer << t.rdbuf();
 
