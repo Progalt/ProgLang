@@ -177,6 +177,26 @@ namespace script
 #endif
 		}
 
+		ObjectType GetObjectType() 
+		{
+			
+#ifdef NAN_BOXING
+
+			if (!IS_OBJ(value))
+				return OBJ_NONE;
+
+			Object* obj = ToObject();
+
+			return obj->type;
+
+#else
+			if (IsObject())
+				return object->type;
+
+			return OBJ_NONE; 
+#endif
+		}
+
 		const bool IsObject() const 
 		{
 #ifdef NAN_BOXING

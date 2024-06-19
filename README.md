@@ -78,7 +78,8 @@ These include.
 
 ### Dependencies
 
-The only dependency is the C++ stdlib. 
+- C++ stdlib
+- nlohmann JSON for the built-in json library. 
 
 ### Things that have helped me along the way
 

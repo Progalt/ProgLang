@@ -706,17 +706,14 @@ namespace script
     bool VM::CallValue(Value value, int argCount)
     {
 
-        if (value.IsObjType(OBJ_FUNCTION))
+        switch(value.GetObjectType())
         {
-
+        case OBJ_FUNCTION:
             return Call((ObjFunction*)value.ToObject(), argCount);
-        }
-        else if (value.IsObjType(OBJ_NATIVE))
+        case OBJ_NATIVE: 
         {
             ObjNative* native = (ObjNative*)value.ToObject();
             NativeFunc func = native->function;
-
-            
 
             Value result = func(argCount, m_CurrentFiber->stack.m_Top - argCount);
 
@@ -725,7 +722,7 @@ namespace script
             m_CurrentFiber->stack.Push(result);
             return true; 
         }
-        else if (value.IsObjType(OBJ_CLASS))
+        case OBJ_CLASS:
         {
             ObjClass* klass = (ObjClass*)value.ToObject();
             m_CurrentFiber->stack.m_Top[-argCount - 1] = Value(NewInstance(klass));
@@ -743,7 +740,7 @@ namespace script
 
             return true; 
         }
-        else if (value.IsObjType(OBJ_BOUND_METHOD))
+        case OBJ_BOUND_METHOD:
         {
             ObjBoundMethod* bound = (ObjBoundMethod*)value.ToObject();
                 
@@ -784,11 +781,10 @@ namespace script
                 return Call(bound->function, argCount);
 
             }
-
         }
-        
+        }
 
-        return false;
+        return false; 
 
     }
 
@@ -990,6 +986,24 @@ namespace script
         }
     }
 
+    void VM::MarkTable(std::unordered_map<uint64_t, Value> table)
+    {
+        for (auto& i : table)
+        {
+            MarkValue(i.second);
+
+            // If we have an embedded array or dictionary we want to loop through and mark them
+            if (i.second.IsObjType(OBJ_DICTIONARY))
+            {
+                MarkTable(((ObjDictionary*)i.second.ToObject())->map);
+            }
+            else if (i.second.IsObjType(OBJ_ARRAY))
+            {
+                MarkArray(((ObjArray*)i.second.ToObject())->values, ((ObjArray*)i.second.ToObject())->size);
+            }
+        }
+    }
+
     void VM::MarkArray(Value* arr, size_t length)
     {
         for (size_t i = 0; i < length; i++)
@@ -1108,6 +1122,14 @@ namespace script
 
                 mdl = mdl->caller;
             }
+
+            break;
+        }
+        case OBJ_DICTIONARY:
+        {
+            ObjDictionary* dict = (ObjDictionary*)obj; 
+
+            MarkTable(dict->map);
 
             break;
         }

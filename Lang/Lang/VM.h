@@ -218,6 +218,7 @@ namespace script
 		void MarkObject(Object* obj);
 		void MarkValue(Value value);
 		void MarkTable(std::unordered_map<std::string, Value> table);
+		void MarkTable(std::unordered_map<uint64_t, Value> table);
 		void MarkStringTable(std::unordered_map<std::string, ObjString*> strs);
 		void MarkArray(Value* arr, size_t length);
 
