@@ -1,0 +1,12 @@
+
+import "std:io" as std; 
+import "F:/Dev/ProgLang/TestFiles/importTest" as importTest; 
+
+class HelloClass 
+{
+    func say_hello() 
+    {
+        std.println("Hello");
+        importTest.test();
+    }
+}

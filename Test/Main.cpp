@@ -10,25 +10,16 @@ int main(int argc, char* argv[])
 	const std::string source =
 R"(
 
-import "std:io" as std; 
+
 import "std:filesystem" as std; 
 import "std:json" as json; 
 
-var filepath = "F:/Dev/ProgLang/TestFiles/test.json"; 
+import "F:/Dev/ProgLang/TestFiles/classTest" as test; 
 
-var exists = std.fileExists(filepath);
 
-if (exists) 
-{
-    var jsonFile = std.readFile(filepath);
+var cl = test.HelloClass();
 
-    std.println(jsonFile);
-
-    var parsedJson = json.parse(jsonFile);
-
-    std.println(parsedJson);
-}
-
+cl.say_hello();
 
 )";  
 
@@ -44,12 +35,6 @@ if (exists)
     script::VMCreateInfo createInfo{};
 
 	script::VM vm(createInfo);
-
-
-	vm.AddNativeFunction("clock", [&](int argCount, script::Value* args)
-		{
-			return script::Value((double)std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count());
-		}, 1);
 
 
 

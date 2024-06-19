@@ -135,7 +135,7 @@ namespace script
 				current = Advance();
 				str += "\"";
 
-				while (current != '"')
+				while (current != '"' && current != 0)
 				{
 					str += current;
 

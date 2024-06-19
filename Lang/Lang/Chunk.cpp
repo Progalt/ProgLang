@@ -402,11 +402,11 @@ namespace script
 			break;
 		case OP_IMPORT_MODULE:
 			//byteInstruction("OP_IMPORT_MODULE");
-			printf("OP_IMPORT_MODULE");
+			printf("OP_IMPORT_MODULE\n");
 			break;
 		case OP_IMPORT_MODULE_AS:
 			//byteInstruction("OP_IMPORT_MODULE");
-			printf("OP_IMPORT_MODULE_AS");
+			printf("OP_IMPORT_MODULE_AS\n");
 			break;
 		default:
 			printf("Unknown OpCode -> %d\n", instruction);

@@ -1,0 +1,7 @@
+
+import "std:io" as std; 
+
+func test()
+{
+	std.println("Hello From far away");
+}

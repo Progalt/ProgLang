@@ -1,23 +1,13 @@
 
 // Compile With:  F:\Dev\ProgLang\build\Cmd\Debug\LangCmd.exe test.lang
 
-import "std:io" as std; 
 import "std:filesystem" as std; 
 import "std:json" as json; 
 
-var filepath = "test.json"; 
+import "classTest" as test; 
 
-var exists = std.fileExists(filepath);
+std.println("Hello World");
 
-if (exists) 
-{
-    var jsonFile = std.readFile(filepath);
+var cl = test.HelloClass();
 
-    std.println(jsonFile);
-
-    var parsedJson = json.parse(jsonFile);
-
-    var name = parsedJson["name"];
-
-    std.println(name);
-}
+cl.say_hello();

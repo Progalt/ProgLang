@@ -70,7 +70,7 @@ namespace script
                 memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR;
             }
 
-            // DisassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code.data()));
+            DisassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code.data()));
 
             uint8_t instruction = 0;
             switch (instruction = READ_BYTE()) 
@@ -480,9 +480,14 @@ namespace script
                 auto it = obj->methods.find(name->str);
                 if (it != obj->methods.end())
                 {
-                    //// Push the method to the stack 
-                    //m_CurrentFiber->stack.Pop();
-                    //m_CurrentFiber->stack.Push(obj->methods[name->str]);
+                    // TODO: Work on making this better for modules
+
+                    if (it->second.IsObjType(OBJ_CLASS))
+                    {
+                        m_CurrentFiber->stack.Pop();
+                        m_CurrentFiber->stack.Push(it->second);
+                        break;
+                    }
 
                     ObjBoundMethod* bound = nullptr;
 
@@ -651,15 +656,15 @@ namespace script
 
                         // If we are within a module 
                         // We need to check if when we go up its another module or global
-                        // if (m_ExecutingModule->caller)
-                        // {
-                        //     m_CurrentGlobal = &m_ExecutingModule->caller->methods;
-                        // }
-                        // else 
-                        //     m_CurrentGlobal = &m_GlobalVariables;
+                        if (m_ExecutingModule->caller)
+                        {
+                            m_CurrentGlobal = &m_ExecutingModule->caller->methods;
+                        }
+                        else 
+                            m_CurrentGlobal = &m_GlobalVariables;
 
-                        // Add the module thats finished executing to the current global scope of the next module or global of the main script 
-                        m_CurrentGlobal->operator[](std::string(m_ExecutingModule->name->str)) = Value(m_ExecutingModule);
+                        // Add the executing module to the globals
+                        m_GlobalVariables[std::string(m_ExecutingModule->name->str)] = Value(m_ExecutingModule);
 
                         // Traverse up the module stack
                         m_ExecutingModule = m_ExecutingModule->caller;
