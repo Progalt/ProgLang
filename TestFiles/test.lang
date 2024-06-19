@@ -2,24 +2,22 @@
 // Compile With:  F:\Dev\ProgLang\build\Cmd\Debug\LangCmd.exe test.lang
 
 import "std:io" as std; 
+import "std:filesystem" as std; 
+import "std:json" as json; 
 
-func helloWorld() {
-    std.println("Hello World!");
+var filepath = "test.json"; 
+
+var exists = std.fileExists(filepath);
+
+if (exists) 
+{
+    var jsonFile = std.readFile(filepath);
+
+    std.println(jsonFile);
+
+    var parsedJson = json.parse(jsonFile);
+
+    var name = parsedJson["name"];
+
+    std.println(name);
 }
-
-class HelloClass {
-
-    construct() {
-        self.x = 100; 
-    }
-
-    func print() {
-        var v = self.x; 
-        println("Hello $v");
-    }
-
-}
-
-var hello = HelloClass();
-
-hello.print(); 

@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include "web.h"
+
 namespace script
 {
     class ObjModule;
@@ -11,6 +13,8 @@ namespace script
 
     // Loaded by std:maths
     void LoadStdMaths(VM* vm, ObjModule* mdl);
+
+    void LoadStdFilesystem(VM* vm, ObjModule* mdl);
 
     // Always loaded 
     void LoadStdPrimitives(VM* vm);

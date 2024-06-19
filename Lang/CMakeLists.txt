@@ -16,3 +16,5 @@ set (SOURCES
 add_library(ProgLang ${SOURCES})
 
 target_include_directories(ProgLang PUBLIC "/")
+
+target_link_libraries(ProgLang PRIVATE nlohmann_json::nlohmann_json)

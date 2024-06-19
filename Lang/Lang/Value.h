@@ -386,6 +386,16 @@ namespace script
 					printf("Instance of %s", klass->klass->name->str);
 				}
 
+				if (IsObjType(OBJ_DICTIONARY))
+				{
+					ObjDictionary* dict = ((ObjDictionary*)object);
+
+					for (auto& [key, val] : dict->map)
+					{
+						val.Print();
+					}
+				}
+
 				break;
 			}
 

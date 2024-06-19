@@ -7,6 +7,8 @@
 
 #include <cmath>
 
+#include <filesystem>
+
 namespace script
 {
 
@@ -200,6 +202,47 @@ namespace script
         mdl->AddNativeFunction("sqrt", sqrtNative, 1);
         mdl->AddNativeFunction("cbrt", cbrtNative, 1);
     }
+
+    auto doesFileExistNative = [&](int argc, Value* args) {
+
+        bool exists = std::filesystem::exists(((ObjString*)args[0].ToObject())->str);
+
+        return Value(exists);
+    };
+
+    auto readFileNative = [&](int argc, Value* args) {
+    
+
+        std::ifstream file(((ObjString*)args[0].ToObject())->str);
+
+        if (!file.is_open())
+        {
+            // Return a null value if the file is not open
+            return Value();
+        }
+
+        // read into a string
+        std::stringstream stream;
+        stream << file.rdbuf();
+
+        std::string filebuf = stream.str(); 
+
+        return Value(memoryManager.AllocateString(filebuf));
+
+    };
+
+    void LoadStdFilesystem(VM* vm, ObjModule* mdl)
+    {
+        if (mdl == nullptr)
+        {
+            vm->AddNativeFunction("fileExists", doesFileExistNative, 1);
+            vm->AddNativeFunction("readFile", readFileNative, 1);
+        }
+
+        mdl->AddNativeFunction("fileExists", doesFileExistNative, 1);
+        mdl->AddNativeFunction("readFile", readFileNative, 1);
+    }
+
 
     auto dictionaryFunc = [&](int argc, Value* args) {
         return script::Value(script::AllocateDictionary());

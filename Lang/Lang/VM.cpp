@@ -825,7 +825,7 @@ namespace script
         std::string importName = asName.empty() ? name : asName;
 
         // Default modules 
-        if (name == "std:io" || name == "std:maths")
+        if (name == "std:io" || name == "std:maths" || name == "std:filesystem" || name == "std:json")
         {
             if (!asName.empty())
             {
@@ -849,6 +849,10 @@ namespace script
                     LoadStdIO(this, mdl);
                 else if (name == "std:maths")
                     LoadStdMaths(this, mdl);
+                else if (name == "std:filesystem")
+                    LoadStdFilesystem(this, mdl);
+                else if (name == "std:json")
+                    LoadJsonModule(this, mdl);
 
                 // Load it into the current global
                 m_CurrentGlobal->operator[](asName) = Value(mdl);
@@ -859,6 +863,10 @@ namespace script
                 LoadStdIO(this, nullptr);
             else if (name == "std:maths")
                 LoadStdMaths(this, nullptr);
+            else if (name == "std:filesystem")
+                LoadStdFilesystem(this, nullptr);
+            else if (name == "std:json")
+                LoadJsonModule(this, nullptr);
 
 
             return nullptr;

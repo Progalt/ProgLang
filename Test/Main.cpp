@@ -9,10 +9,25 @@ int main(int argc, char* argv[])
 
 	const std::string source =
 R"(
-import "F:/Dev/ProgLang/TestFiles/test" as test; 
 
+import "std:io" as std; 
+import "std:filesystem" as std; 
+import "std:json" as json; 
 
-test.helloWorld();
+var filepath = "F:/Dev/ProgLang/TestFiles/test.json"; 
+
+var exists = std.fileExists(filepath);
+
+if (exists) 
+{
+    var jsonFile = std.readFile(filepath);
+
+    std.println(jsonFile);
+
+    var parsedJson = json.parse(jsonFile);
+
+    std.println(parsedJson);
+}
 
 
 )";  
