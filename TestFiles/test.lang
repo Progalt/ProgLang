@@ -4,10 +4,51 @@
 import "std:filesystem" as std; 
 import "std:json" as json; 
 
-import "classTest" as test; 
 
-std.println("Hello World");
+class Response
+{
+	construct()
+	{
+		self.content = "";
+	}
 
-var cl = test.HelloClass();
+	func set_content(val) 
+	{
+		self.content = val; 
+	}
+}
 
-cl.say_hello();
+class Server
+{
+	construct() 
+	{
+		self.get_requests = Dictionary(); 
+	}
+
+	func set_get(str, callback)
+	{
+		self.get_requests[str] = callback; 
+	}
+
+	func dummy_get(str)
+	{
+		var f = self.get_requests[str];
+		return f();
+	}
+}
+
+func onGet() { 
+	var res = Response();
+
+	res.set_content("Hello");
+
+	return res; 
+}
+
+var server = Server(); 
+
+server.set_get("/hi", onGet); 
+
+var response = server.dummy_get("/hi");
+
+std.println(response.content);

@@ -282,8 +282,12 @@ namespace script
 				//offset += 3;
 			};
 
+		
+		if (offset >= chunk->code.size())
+			return;
 
 		uint8_t instruction = chunk->code[offset];
+		
 		switch (instruction)
 		{
 		case OP_RETURN:

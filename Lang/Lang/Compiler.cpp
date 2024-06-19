@@ -332,7 +332,8 @@ namespace script
 	{
 		if (m_FunctionType == TYPE_INITIALIZER)
 		{
-			EmitBytes(OP_GET_LOCAL, 0);
+			EmitByte(OP_GET_LOCAL);
+			EmitBytes(0, 0);
 		}
 		else
 		{

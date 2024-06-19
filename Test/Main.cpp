@@ -6,20 +6,27 @@
 
 int main(int argc, char* argv[])
 {
-
+	 
 	const std::string source =
 R"(
 
+import "std:io" as std; 
 
-import "std:filesystem" as std; 
-import "std:json" as json; 
+class Server
+{
 
-import "F:/Dev/ProgLang/TestFiles/classTest" as test; 
+	construct()
+	{
+		self.x = 10; 
+	}
+
+}
+
+var server = Server(); 
+
+std.println(server.x);
 
 
-var cl = test.HelloClass();
-
-cl.say_hello();
 
 )";  
 

@@ -1,8 +1,6 @@
 
 #pragma once
 
-#define VM_DEBUG_ALLOCS
-
 #include "Chunk.h"
 #include "Value.h"
 #include <unordered_map>
