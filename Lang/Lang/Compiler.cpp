@@ -910,7 +910,7 @@ namespace script
 				
 
 				EmitLoop(loopStart, false);
-				int exit = GetCurrentChunk()->code.size();
+				int exit = GetCurrentChunk()->code.size() - loopStart - 2;
 
 				GetCurrentChunk()->code[patch] = (exit >> 8) & 0xFF;
 				GetCurrentChunk()->code[patch + 1] = exit & 0xFF;

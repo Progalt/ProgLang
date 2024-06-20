@@ -283,8 +283,6 @@ namespace script
 			};
 
 		
-		if (offset >= chunk->code.size())
-			return;
 
 		uint8_t instruction = chunk->code[offset];
 		

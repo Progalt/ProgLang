@@ -79,7 +79,7 @@ namespace script
             }
             printf("\n");
 
-             DisassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code.data()));
+            DisassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code.data()));
 #endif
             uint8_t instruction = 0;
             switch (instruction = READ_BYTE()) 

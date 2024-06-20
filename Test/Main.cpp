@@ -14,19 +14,26 @@ import "std:io";
 
 
 
-var x = [ 2, 4, 5, 6, 67, 234, 24, 424];
+var x = (4..15).expand();
 
 println(x);
 
-
+func fromFunc() {
 	var len = x.length();
 
 	for (var i in 0..len) {
+		
+		var t = i;
+
+		println(t);
+		println("--");
 
 		var b = x[i];
 		println(b);
 	}
+}
 
+fromFunc();
 
 
 
