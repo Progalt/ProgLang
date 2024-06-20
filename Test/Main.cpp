@@ -12,12 +12,10 @@ R"(
 
 import "std:io" as std; 
 
-var l = [ 2, 4, 5, 1, 2, 3, 10, 11, 13, 14, 145, 1 ];
 
-while(true)
+for (var i in 2..10)
 {
-	l = l + 6; 
-	std.println("Hello");
+	std.println(i);
 }
 
 

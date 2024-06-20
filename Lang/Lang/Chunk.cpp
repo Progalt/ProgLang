@@ -412,6 +412,12 @@ namespace script
 			//byteInstruction("OP_IMPORT_MODULE");
 			printf("OP_IMPORT_MODULE_AS\n");
 			break;
+		case OP_ITER:
+			printf("OP_ITER\n");
+			break;
+		case OP_CREATE_RANGE:
+			printf("OP_CREATE_RANGE\n");
+			break;
 		default:
 			printf("Unknown OpCode -> %d\n", instruction);
 			offset++;

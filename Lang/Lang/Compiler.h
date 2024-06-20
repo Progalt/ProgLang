@@ -122,6 +122,7 @@ namespace script
 		void Self(bool canAssign);
 		void ImportStatement();
 		void Increment(bool canAssign);
+		void Range(bool canAssign);
 
 		void Function(FunctionType type);
 

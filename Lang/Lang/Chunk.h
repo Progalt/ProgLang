@@ -72,6 +72,8 @@ namespace script
 		OP_IMPORT_MODULE_AS,
 
 		OP_ITER, 
+
+		OP_CREATE_RANGE, 
 	};
 
 	class Value;

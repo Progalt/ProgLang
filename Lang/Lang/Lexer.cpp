@@ -105,7 +105,13 @@ namespace script
 				EmitToken(TK_COMMA, ",");
 				break;
 			case '.':
-				EmitToken(TK_DOT, ".");
+				if (Peek() == '.')
+				{
+					EmitToken(TK_DOT_DOT, "..");
+					Advance();
+				}
+				else 
+					EmitToken(TK_DOT, ".");
 				break;
 			case '>':
 				if (Peek() == '=')
@@ -233,6 +239,12 @@ namespace script
 
 				while (isDigit(current) || current == '.')
 				{
+
+					if (current == '.' && Peek(1) == '.')
+					{
+
+						break;
+					}
 
 					num += current;
 

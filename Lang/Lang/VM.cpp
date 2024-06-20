@@ -213,6 +213,19 @@ namespace script
 
                 break;
             }
+            case OP_CREATE_RANGE:
+            {
+                Value end = m_CurrentFiber->stack.Pop();
+                Value start = m_CurrentFiber->stack.Pop();
+
+                ObjRange* range = CreateRange();
+                range->from = start.ToNumber();
+                range->to = end.ToNumber();
+
+                m_CurrentFiber->stack.Push(Value(range));
+
+                break;
+            }
             case OP_SUBSCRIPT_READ:
             {
                 Value idx = m_CurrentFiber->stack.Pop();
@@ -644,6 +657,21 @@ namespace script
                     //*iterator = Value((double)(idx + 1));
                     *value = arr->values[idx];
                     iterator->MakeNumber((double)(idx + 1));
+                    break;
+                }
+                case OBJ_RANGE:
+                {
+                    ObjRange* range = (ObjRange*)obj;
+
+                    if (it < range->from)
+                        it = range->from;
+
+                    if (it >= range->to)
+                        frame->ip += jumpOffset;
+
+                    *value = it; 
+                    iterator->MakeNumber(it + range->step);
+
                     break;
                 }
                 default:

@@ -273,8 +273,13 @@ namespace script
 		};
 
 		auto IncrementFunc = [&](bool canAssign) {
-			this->Increment(canAssign);
+			//this->Increment(canAssign);
 		};
+
+		auto RangeFunc = [&](bool canAssign)
+			{
+				this->Range(canAssign);
+			};
 
 		rules[TK_OPEN_BRACE] = { GroupingFunc, CallFunc,   PREC_CALL },
 			rules[TK_CLOSE_BRACE] = { NULL,     NULL,   PREC_NONE },
@@ -317,6 +322,7 @@ namespace script
 			rules[TK_MODULO] = { NULL,     BinaryFunc,   PREC_FACTOR };
 			rules[TK_COLON] = { NULL,     NULL,   PREC_NONE };
 			rules[TK_PLUS_PLUS] = { NULL,     IncrementFunc,   PREC_CALL };
+			rules[TK_DOT_DOT] = { NULL,     BinaryFunc,   PREC_CALL };
 
 
 	}
@@ -398,7 +404,7 @@ namespace script
 		case TK_POW:			EmitByte(OP_POWER); break;
 		case TK_MODULO:			EmitByte(OP_MODULO); break;
 
-		case TK_PLUS_PLUS: EmitByte(OP_INCREMENT); break;
+		case TK_DOT_DOT: EmitByte(OP_CREATE_RANGE); break;
 
 		case TK_BANG_EQUALS:    EmitBytes(OP_EQUAL, OP_NOT); break;
 		case TK_EQUALS:   EmitByte(OP_EQUAL); break;
@@ -1081,6 +1087,7 @@ namespace script
 			EmitByte(OP_INCREMENT);
 		}
 	}
+
 
 
 	void Compiler::Method()

@@ -35,6 +35,8 @@ namespace script
 		OBJ_FIBER,
 
 		OBJ_USER_DATA, 
+
+		OBJ_RANGE, 
 	};
 
 	
@@ -102,6 +104,18 @@ namespace script
 	};
 
 	ObjArray* AllocateArray(const std::vector<Value>& a);
+
+	class ObjRange : public Object
+	{
+	public:
+
+		double from;
+		double to;
+		double step;
+
+	};
+
+	ObjRange* CreateRange();
 
 	class ObjDictionary : public Object
 	{

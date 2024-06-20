@@ -158,6 +158,18 @@ namespace script
 		size = newSize;
 	}
 
+	ObjRange* CreateRange()
+	{
+		ObjRange* range = memoryManager.AllocateObject<ObjRange>();
+		range->type = OBJ_RANGE;
+
+		range->from = 0.0;
+		range->to = 0.0;
+		range->step = 1.0;
+
+		return range;
+	}
+
 	ObjDictionary* AllocateDictionary()
 	{
 		ObjDictionary* dict = memoryManager.AllocateObject<ObjDictionary>();
