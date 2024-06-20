@@ -26,7 +26,12 @@ namespace script
 			switch (current)
 			{
 			case '+':
-				EmitToken(TK_PLUS, "+");
+				if (Peek() == '+')
+				{
+					EmitToken(TK_PLUS_PLUS, "++");
+				}
+				else 
+					EmitToken(TK_PLUS, "+");
 				break;
 			case '-':
 				EmitToken(TK_MINUS, "-");
@@ -177,6 +182,8 @@ namespace script
 					EmitToken(TK_IS, iden);
 				else if (iden == "as")
 					EmitToken(TK_AS, iden);
+				else if (iden == "in")
+					EmitToken(TK_IN, iden);
 				else if (iden == "while")
 					EmitToken(TK_WHILE, iden);
 				else if (iden == "for")

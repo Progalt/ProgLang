@@ -70,7 +70,7 @@ namespace script
                 memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR;
             }
 
-            DisassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code.data()));
+            // DisassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code.data()));
 
             uint8_t instruction = 0;
             switch (instruction = READ_BYTE()) 
@@ -151,6 +151,16 @@ namespace script
 
                 break;
             }
+            case OP_INCREMENT:
+            {
+                Value v = m_CurrentFiber->stack.Pop();
+
+                int num = (int)v.ToNumber();
+                num++;
+                v = Value((double)num);
+
+                m_CurrentFiber->stack.Push(v);
+            }
             case OP_MODULO:
             {
                 Value b = m_CurrentFiber->stack.Pop();
@@ -164,11 +174,7 @@ namespace script
             case OP_POP: m_CurrentFiber->stack.Pop(); break;
             case OP_DEFINE_GLOBAL:
             {
-                uint8_t upper = READ_BYTE();
-                uint8_t lower = READ_BYTE();
-
-                uint16_t constant = upper << 8;
-                constant = constant | lower;
+                uint16_t constant = READ_SHORT();
 
                 ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
 
@@ -598,6 +604,45 @@ namespace script
                 }
 
                 m_CurrentFiber->stack.Push(Value(memoryManager.AllocateString(output)));
+
+                break;
+            }
+            case OP_ITER:
+            {
+                // This works as -4... not sure why
+                // Maybe might break...
+                Value* value = m_CurrentFiber->stack.m_Top - 4;
+                Value seq = *(m_CurrentFiber->stack.m_Top - 2);
+                Value* iterator = m_CurrentFiber->stack.m_Top - 1;
+
+                uint16_t jumpOffset = READ_SHORT();
+
+                double it = 0.0;
+                if (!iterator->IsNil())
+                    it = iterator->ToNumber();
+
+                Object* obj = seq.ToObject();
+
+                switch (obj->type)
+                {
+                case OBJ_ARRAY:
+                {
+                    ObjArray* arr = (ObjArray*)obj;
+                    uint32_t idx = (uint32_t)trunc(it);
+
+                    if (idx >= arr->size)
+                        frame->ip += jumpOffset;
+
+                    //*iterator = Value((double)(idx + 1));
+                    *value = arr->values[idx];
+                    iterator->MakeNumber((double)(idx + 1));
+                    break;
+                }
+                default:
+                    Error("Object does not support iteration.");
+
+                    return INTERPRET_RUNTIME_ERROR;
+                }
 
                 break;
             }

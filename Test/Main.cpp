@@ -12,19 +12,14 @@ R"(
 
 import "std:io" as std; 
 
-class Server
-{
+var l = [ 2, 4, 5, 1, 2, 3, 10, 11, 13, 14, 145, 1 ];
 
-	construct()
+
+
+	for (var i in l) 
 	{
-		self.x = 10; 
+		std.println(i);
 	}
-
-}
-
-var server = Server(); 
-
-std.println(server.x);
 
 
 

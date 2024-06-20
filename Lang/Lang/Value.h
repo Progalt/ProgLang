@@ -4,6 +4,8 @@
 #include <assert.h>
 #include "Object.h"
 
+// Only do NAN Boxing on release
+// Better for debugging this way
 #ifndef _DEBUG
 #define NAN_BOXING
 #endif

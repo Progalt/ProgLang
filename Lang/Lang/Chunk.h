@@ -25,6 +25,8 @@ namespace script
 		OP_NIL, 
 
 		OP_NOT, 
+		OP_INCREMENT, 
+		OP_DECREMENT, 
 
 		OP_EQUAL, 
 		OP_GREATER,
@@ -68,6 +70,8 @@ namespace script
 
 		OP_IMPORT_MODULE, 
 		OP_IMPORT_MODULE_AS,
+
+		OP_ITER, 
 	};
 
 	class Value;

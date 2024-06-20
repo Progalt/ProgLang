@@ -109,7 +109,7 @@ namespace script
 		if (offset > parser.tokens.size())
 			return false;
 
-		return (parser.tokens[offset].type == type);
+		return (parser.tokens[parser.tokenOffset + offset].type == type);
 	}
 
 	Token GetNextToken()
@@ -272,6 +272,10 @@ namespace script
 			this->Self(canAssign);
 		};
 
+		auto IncrementFunc = [&](bool canAssign) {
+			this->Increment(canAssign);
+		};
+
 		rules[TK_OPEN_BRACE] = { GroupingFunc, CallFunc,   PREC_CALL },
 			rules[TK_CLOSE_BRACE] = { NULL,     NULL,   PREC_NONE },
 			rules[TK_OPEN_CURLY] = { NULL,     NULL,   PREC_NONE },
@@ -312,6 +316,7 @@ namespace script
 			rules[TK_POW] = { NULL,     BinaryFunc,   PREC_POWER };
 			rules[TK_MODULO] = { NULL,     BinaryFunc,   PREC_FACTOR };
 			rules[TK_COLON] = { NULL,     NULL,   PREC_NONE };
+			rules[TK_PLUS_PLUS] = { NULL,     IncrementFunc,   PREC_CALL };
 
 
 	}
@@ -392,6 +397,8 @@ namespace script
 		case TK_SLASH:         EmitByte(OP_DIVIDE); break;
 		case TK_POW:			EmitByte(OP_POWER); break;
 		case TK_MODULO:			EmitByte(OP_MODULO); break;
+
+		case TK_PLUS_PLUS: EmitByte(OP_INCREMENT); break;
 
 		case TK_BANG_EQUALS:    EmitBytes(OP_EQUAL, OP_NOT); break;
 		case TK_EQUALS:   EmitByte(OP_EQUAL); break;
@@ -588,7 +595,7 @@ namespace script
 		EmitByte(OP_POP);
 	}
 
-	void Compiler::VariableDeclaration(bool exportVar)
+	void Compiler::VariableDeclaration(bool exportVar, bool expectSemicolon)
 	{
 
 		size_t global = ParseVariable("Expected a variable name.");
@@ -609,7 +616,8 @@ namespace script
 			EmitByte(OP_NIL);
 		}
 
-		Consume(TK_SEMICOLON, "Expected ';' at the end of declaration.");
+		if (expectSemicolon)
+			Consume(TK_SEMICOLON, "Expected ';' at the end of declaration.");
 
 		DefineVariable((uint16_t)global, exportVar);
 	}
@@ -832,6 +840,53 @@ namespace script
 		}
 		else if (Match(TK_VAR))
 		{
+			if (Peek(0, TK_IN))
+			{
+				// We have a in statement
+
+				// Define a new variable 
+				VariableDeclaration(false, false);
+
+				NamedVariable(parser.previous, false);
+				
+
+				Consume(TK_IN, "Expected an 'in'.");
+
+				// After the in we have an expression 
+				Expression();
+
+				Consume(TK_CLOSE_BRACE, "Expected ')' after for clauses.");
+
+				// Push a nil value on for the iterator
+				EmitByte(OP_NIL);
+				
+				// We start our loop here
+				int loopStart = GetCurrentChunk()->code.size();
+
+
+				EmitByte(OP_ITER);
+
+				int patch = GetCurrentChunk()->code.size();
+				EmitBytes(0xFF, 0xFF);
+
+				Statement();
+
+				
+				
+
+				EmitLoop(loopStart, false);
+				int exit = GetCurrentChunk()->code.size();
+
+				GetCurrentChunk()->code[patch] = (exit >> 8) & 0xFF;
+				GetCurrentChunk()->code[patch + 1] = exit & 0xFF;
+				
+				EmitByte(OP_POP);
+				EndScope();
+
+				// Early return so we don't run any other code
+				return; 
+			}
+
 			VariableDeclaration(false);
 		}
 		else
@@ -1017,6 +1072,16 @@ namespace script
 		}
 	}
 
+	void Compiler::Increment(bool canAssign)
+	{
+		TokenType type = parser.previous.type;
+
+		if (type == TK_PLUS_PLUS)
+		{
+			EmitByte(OP_INCREMENT);
+		}
+	}
+
 
 	void Compiler::Method()
 	{
@@ -1115,9 +1180,9 @@ namespace script
 		return GetCurrentChunk()->code.size() - 2;
 	}
 
-	void Compiler::EmitLoop(int loopStart)
+	void Compiler::EmitLoop(int loopStart, bool iter)
 	{
-		EmitByte(OP_LOOP);
+		EmitByte(iter ? OP_ITER : OP_LOOP);
 
 		int offset = GetCurrentChunk()->code.size() - loopStart + 2;
 

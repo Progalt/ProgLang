@@ -107,7 +107,7 @@ namespace script
 		void String(bool canAssign);
 		void Statement();
 		void Declaration();
-		void VariableDeclaration(bool exportVar);
+		void VariableDeclaration(bool exportVar, bool expectSemicolon = true);
 		void Variable(bool canAssign);
 		void IfStatement();
 		void WhileStatement();
@@ -121,6 +121,7 @@ namespace script
 		void Dot(bool canAssign);
 		void Self(bool canAssign);
 		void ImportStatement();
+		void Increment(bool canAssign);
 
 		void Function(FunctionType type);
 
@@ -132,7 +133,7 @@ namespace script
 		void Or(bool canAssign);
 
 		int EmitJump(uint8_t instruction);
-		void EmitLoop(int loopStart);
+		void EmitLoop(int loopStart, bool iter = false);
 
 		void PatchJump(int offset);
 
