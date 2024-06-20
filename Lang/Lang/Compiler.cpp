@@ -322,7 +322,7 @@ namespace script
 			rules[TK_MODULO] = { NULL,     BinaryFunc,   PREC_FACTOR };
 			rules[TK_COLON] = { NULL,     NULL,   PREC_NONE };
 			rules[TK_PLUS_PLUS] = { NULL,     IncrementFunc,   PREC_CALL };
-			rules[TK_DOT_DOT] = { NULL,     BinaryFunc,   PREC_CALL };
+			rules[TK_DOT_DOT] = { NULL,     BinaryFunc,   PREC_POWER };
 
 
 	}
@@ -779,6 +779,30 @@ namespace script
 		AddLocal(*name);
 	}
 
+	void Compiler::DeclareVariableName(const std::string& name)
+	{
+		if (m_ScopeDepth == 0) {
+			return;
+		}
+
+
+		for (int i = m_LocalCount - 1; i >= 0; i--)
+		{
+			Local* local = &m_Locals[i];
+			if (local->depth != -1 && local->depth < m_ScopeDepth)
+			{
+				break;
+			}
+
+			if (name == local->name.value)
+			{
+				Error("Already a variable with this name in this scope: " + name);
+			}
+		}
+
+		AddLocal(Token{ TK_IDENTIFIER, name });
+	}
+
 	void Compiler::AddLocal(Token name)
 	{
 		if (m_LocalCount == UINT8_MAX) {
@@ -855,16 +879,21 @@ namespace script
 
 				NamedVariable(parser.previous, false);
 				
+				EmitByte(OP_POP);
 
 				Consume(TK_IN, "Expected an 'in'.");
 
 				// After the in we have an expression 
 				Expression();
 
+				DeclareVariableName("__seq");
+
 				Consume(TK_CLOSE_BRACE, "Expected ')' after for clauses.");
 
 				// Push a nil value on for the iterator
 				EmitByte(OP_NIL);
+
+				DeclareVariableName("__itr");
 				
 				// We start our loop here
 				int loopStart = GetCurrentChunk()->code.size();

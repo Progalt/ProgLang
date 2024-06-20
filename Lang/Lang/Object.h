@@ -149,7 +149,7 @@ namespace script
 		ObjString* name;
 	};
 
-	using NativeFunc = std::function<Value(int argCount, Value* args)>;
+	using NativeFunc = std::function<Value( int argCount, Value* args)>;
 
 	class ObjNative : public Object
 	{

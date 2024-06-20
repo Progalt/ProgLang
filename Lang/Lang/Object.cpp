@@ -167,6 +167,26 @@ namespace script
 		range->to = 0.0;
 		range->step = 1.0;
 
+		range->methods["expand"] = Value(NewNativeFunction([&](int argc, Value* args) {
+			ObjRange* range = (ObjRange*)args[0].ToObject();
+
+			double diff = range->to - range->from;
+			size_t elements = (size_t)floor(diff / range->step);
+
+			std::vector<Value> vec(elements);
+
+			double s = range->from;
+			for (size_t i = 0; i < elements; i++)
+			{
+				vec[i] = s;
+				s += range->step;
+			}
+
+			ObjArray* arr = AllocateArray(vec);
+
+			return Value(arr);
+		}, 0));
+			
 		return range;
 	}
 

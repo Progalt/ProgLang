@@ -213,7 +213,7 @@ namespace script
 #ifdef NAN_BOXING
 			return (((value) & QNAN) != QNAN);
 #else
-			return type == VALUE_NUMBER;
+			return (type == VALUE_NUMBER);
 #endif
 
 		}
@@ -416,6 +416,20 @@ namespace script
 					{
 						val.Print();
 					}
+				}
+
+				if (IsObjType(OBJ_FUNCTION))
+				{
+					ObjFunction* func = (ObjFunction*)object;
+					
+					printf("%s", func->name->str);
+				}
+
+				if (IsObjType(OBJ_RANGE))
+				{
+					ObjRange* range = (ObjRange*)object;
+
+					printf("%g..%g", range->from, range->to);
 				}
 
 				break;

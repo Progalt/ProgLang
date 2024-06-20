@@ -69,9 +69,18 @@ namespace script
                 memoryManager.shouldCollectGarbage = false;
                 memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR;
             }
+// #define VM_STACK_TRACE
+#ifdef VM_STACK_TRACE
+            printf("          ");
+            for (Value* slot = m_CurrentFiber->stack.m_Stack; slot < m_CurrentFiber->stack.m_Top; slot++) {
+                printf("[ ");
+                slot->Print();
+                printf(" ]");
+            }
+            printf("\n");
 
-            // DisassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code.data()));
-
+             DisassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code.data()));
+#endif
             uint8_t instruction = 0;
             switch (instruction = READ_BYTE()) 
             {
@@ -206,7 +215,9 @@ namespace script
 
                 for (uint16_t i = 0; i < size; i++)
                 {
-                    value[size - i - 1] = m_CurrentFiber->stack.Pop();
+                    Value val = m_CurrentFiber->stack.Pop();
+
+                    value[size - i - 1] = val;
                 }
 
                 m_CurrentFiber->stack.Push(Value(AllocateArray(value)));
@@ -246,7 +257,7 @@ namespace script
                     return INTERPRET_RUNTIME_ERROR;
                 }
 
-                if (idx.IsNumber())
+                if (!idx.IsNumber())
                 {
                     Error("Index is not a number");
                     return INTERPRET_RUNTIME_ERROR;
@@ -300,7 +311,7 @@ namespace script
                     break;
                 }
 
-                if (idx.IsNumber())
+                if (!idx.IsNumber())
                 {
                     Error("Index is not a number");
                     return INTERPRET_RUNTIME_ERROR;
@@ -632,7 +643,7 @@ namespace script
             {
                 // This works as -4... not sure why
                 // Maybe might break...
-                Value* value = m_CurrentFiber->stack.m_Top - 4;
+                Value* value = m_CurrentFiber->stack.m_Top - 3;
                 Value seq = *(m_CurrentFiber->stack.m_Top - 2);
                 Value* iterator = m_CurrentFiber->stack.m_Top - 1;
 
@@ -759,6 +770,10 @@ namespace script
                         // If the caller fiber exists we want to go back to that 
 
                         m_CurrentFiber = m_CurrentFiber->caller;
+
+                        // NOTE: This might break
+                        m_CurrentFiber->stack.Push(result);
+
                         frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
                         break;
                     }

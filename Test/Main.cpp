@@ -6,17 +6,27 @@
 
 int main(int argc, char* argv[])
 {
-	 
+	  
 	const std::string source =
 R"(
 
-import "std:io" as std; 
+import "std:io";
 
 
-for (var i in 2..10)
-{
-	std.println(i);
-}
+
+var x = [ 2, 4, 5, 6, 67, 234, 24, 424];
+
+println(x);
+
+
+	var len = x.length();
+
+	for (var i in 0..len) {
+
+		var b = x[i];
+		println(b);
+	}
+
 
 
 

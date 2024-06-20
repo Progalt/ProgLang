@@ -144,6 +144,7 @@ namespace script
 		void EndScope();
 
 		void DeclareVariable();
+		void DeclareVariableName(const std::string& name);
 
 		void AddLocal(Token name);
 

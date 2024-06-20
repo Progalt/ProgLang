@@ -180,6 +180,10 @@ namespace script
 			return classInterface;
 		}
 
+		// Pauses the current execution of code and calls this fiber
+		// Result of the fiber can be retrieved 
+		void ExecuteFiber(ObjFiber* fiber);
+
 	private:
 
 		IOInterface* m_IOInterface = nullptr;
