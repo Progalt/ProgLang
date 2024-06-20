@@ -231,6 +231,7 @@ namespace script
 
 		mdl->type = OBJ_MODULE;
 		mdl->name = name;
+		mdl->caller = nullptr;
 
 		return mdl;
 		

@@ -486,9 +486,17 @@ namespace script
                 auto it = obj->methods.find(name->str);
                 if (it != obj->methods.end())
                 {
-                    // TODO: Work on making this better for modules
 
                     if (it->second.IsObjType(OBJ_CLASS))
+                    {
+                        m_CurrentFiber->stack.Pop();
+                        m_CurrentFiber->stack.Push(it->second);
+                        break;
+                    }
+
+                    // If its a module we don't want to create a bound method
+                    // It doesn't make sense
+                    if (stackObj.IsObjType(OBJ_MODULE))
                     {
                         m_CurrentFiber->stack.Pop();
                         m_CurrentFiber->stack.Push(it->second);
@@ -1165,13 +1173,13 @@ namespace script
             MarkTable(mdl->methods);
             MarkObject(mdl->name);
 
-            mdl = mdl->caller;
+            /*mdl = mdl->caller;
             while (mdl != nullptr)
             {
                 MarkObject(mdl);
 
                 mdl = mdl->caller;
-            }
+            }*/
 
             break;
         }

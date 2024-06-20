@@ -190,7 +190,7 @@ namespace script
 
 		ObjString* name;
 
-		ObjModule* caller;
+		ObjModule* caller = nullptr;
 
 		void AddNativeFunction(const std::string& name, NativeFunc func, int arity);
 	};
