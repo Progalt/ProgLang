@@ -69,7 +69,7 @@ namespace script
                 memoryManager.shouldCollectGarbage = false;
                 memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR;
             }
-// #define VM_STACK_TRACE
+//#define VM_STACK_TRACE
 #ifdef VM_STACK_TRACE
             printf("          ");
             for (Value* slot = m_CurrentFiber->stack.m_Stack; slot < m_CurrentFiber->stack.m_Top; slot++) {
@@ -145,7 +145,36 @@ namespace script
 
                 break;
             }
-            case OP_ADD:      BINARY_OP(+); break;
+            case OP_ADD: 
+            {
+                Value b = m_CurrentFiber->stack.Pop();
+                Value a = m_CurrentFiber->stack.Pop();
+
+                if (a.IsObjType(OBJ_ARRAY))
+                {
+
+                    break;
+                }
+                else if (a.IsObjType(OBJ_STRING) && b.IsObjType(OBJ_STRING))
+                {
+
+                    ObjString* str1 = (ObjString*)a.ToObject();
+                    ObjString* str2 = (ObjString*)b.ToObject();
+
+                    ObjString* appended = str1->AppendNew(str2);
+
+                    m_CurrentFiber->stack.Push(Value(appended));
+
+                    break;
+                }
+
+                double anum = a.ToNumber();
+                double bnum = b.ToNumber();
+
+                m_CurrentFiber->stack.Push(Value(anum + bnum));
+
+                break;
+            }
             case OP_SUBTRACT: BINARY_OP(-); break;
             case OP_MULTIPLY: BINARY_OP(*); break;
             case OP_DIVIDE:   BINARY_OP(/ ); break;

@@ -17,10 +17,6 @@ namespace script
 		length = 0;
 	}
 
-	const std::string ObjString::ToString()
-	{
-		return std::string(str);
-	}
 
 	void ObjString::Append(ObjString* str2)
 	{
@@ -167,7 +163,7 @@ namespace script
 		range->to = 0.0;
 		range->step = 1.0;
 
-		range->methods["expand"] = Value(NewNativeFunction([&](int argc, Value* args) {
+		range->methods["unpack"] = Value(NewNativeFunction([&](int argc, Value* args) {
 			ObjRange* range = (ObjRange*)args[0].ToObject();
 
 			double diff = range->to - range->from;

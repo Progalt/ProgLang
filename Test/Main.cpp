@@ -12,30 +12,33 @@ R"(
 
 import "std:io";
 
+func fizzbuzz(max) {
 
+	for (var i in 0..max) {
+		var mul3 = (i % 3) == 0; 
+		var mul5 = (i % 5) == 0;
 
-var x = (4..15).expand();
+		var output = "";	
 
-println(x);
+		if (mul3) {
+			output = output + "Fizz";
+		}
 
-func fromFunc() {
-	var len = x.length();
-
-	for (var i in 0..len) {
+		if (mul5) {
+			output = output + "Buzz";
+		}
 		
-		var t = i;
+		if ((!mul3) and (!mul5)) {
+			output = "$i";
+		}
 
-		println(t);
-		println("--");
-
-		var b = x[i];
-		println(b);
+		println(output);
+		
 	}
+
 }
 
-fromFunc();
-
-
+fizzbuzz(50);
 
 )";  
 

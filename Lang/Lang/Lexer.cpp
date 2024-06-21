@@ -34,7 +34,15 @@ namespace script
 					EmitToken(TK_PLUS, "+");
 				break;
 			case '-':
-				EmitToken(TK_MINUS, "-");
+				// The comment is a --
+				if (Peek() == '-')
+				{
+					// We want to skip until end of line
+
+					while (Advance() != '\n') {}
+				}
+				else
+					EmitToken(TK_MINUS, "-");
 				break;
 			case '*':
 				if (Peek() == '*')
@@ -46,13 +54,6 @@ namespace script
 					EmitToken(TK_STAR, "*");
 				break;
 			case '/':
-				if (Peek() == '/')
-				{
-					// We want to skip until end of line
-
-					while (Advance() != '\n') {}
-				}
-				else
 					EmitToken(TK_SLASH, "/");
 				break;
 			case '%':

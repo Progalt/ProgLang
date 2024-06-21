@@ -49,7 +49,7 @@ namespace script
 
 		virtual void Delete() {} 
 
-		virtual const std::string ToString() { return "nil"; }
+		virtual std::string ToString() { return "nil"; }
 
 		// Any object can contain methods
 		std::unordered_map<std::string, Value> methods; 
@@ -82,7 +82,7 @@ namespace script
 		// This is more what you want for a + operator
 		ObjString* AppendNew(ObjString* str2);
 
-		const std::string ToString() override;
+		std::string ToString() override { return "string"; }
 	};
 
 
@@ -100,6 +100,8 @@ namespace script
 
 		void Append(ObjArray* arr);
 
+		std::string ToString() override { return "list"; }
+
 	private:
 	};
 
@@ -113,6 +115,8 @@ namespace script
 		double to;
 		double step;
 
+		std::string ToString() override { return "range"; }
+
 	};
 
 	ObjRange* CreateRange();
@@ -125,6 +129,8 @@ namespace script
 
 		// We take the uint64_t hash from a value for this
 		std::unordered_map<uint64_t, Value> map;
+
+		std::string ToString() override { return "dictionary"; }
 
 	private:
 	};
@@ -147,6 +153,8 @@ namespace script
 		Chunk chunk;
 		int arity = 0;
 		ObjString* name;
+
+		std::string ToString() override { return "function"; }
 	};
 
 	using NativeFunc = std::function<Value( int argCount, Value* args)>;
@@ -157,6 +165,8 @@ namespace script
 
 		int arity = 0;
 		NativeFunc function;
+
+		std::string ToString() override { return "native function"; }
 
 	private:
 	};
@@ -178,6 +188,7 @@ namespace script
 
 		ObjString* name;
 
+		std::string ToString() override { return std::string(name->str); }
 
 	private:
 	};
@@ -192,6 +203,9 @@ namespace script
 
 		ObjClass* klass;
 		std::unordered_map<std::string, Value> fields;
+
+		// We just return the base class to string
+		std::string ToString() override { return klass->ToString(); }
 
 	};
 

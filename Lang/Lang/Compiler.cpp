@@ -830,9 +830,11 @@ namespace script
 
 		int elseJump = EmitJump(OP_JUMP);
 
-		EmitByte(OP_POP);
+		//EmitByte(OP_POP);
 
 		PatchJump(thenJump);
+
+		EmitByte(OP_POP);
 
 		if (Match(TK_ELSE))
 			Statement();

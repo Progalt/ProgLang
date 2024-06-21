@@ -484,28 +484,26 @@ namespace script
 #endif
 		}
 
-		const std::string& ToCppString()
+		
+
+		std::string GetTypeString()
 		{
 			if (IsNumber())
 			{
-				return std::to_string(ToNumber());
+				return "number";
 			}
-
 			else if (IsBool())
 			{
-				return AsBool() ? "true" : "false";
+				return "bool";
 			}
-
-			else if (IsNil())
-			{
-				return "nil";
-			}
-
 			else if (IsObject())
 			{
 				Object* obj = ToObject();
+
 				return obj->ToString();
 			}
+
+			return "nil";
 		}
 
 	};
