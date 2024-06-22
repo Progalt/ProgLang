@@ -51,7 +51,7 @@ namespace script
         }
     }
 
-    auto jsonParseNative = [&](int argc, Value* args) 
+    auto jsonParseNative = [](int argc, Value* args) 
     {
 
         assert(argc == 1);

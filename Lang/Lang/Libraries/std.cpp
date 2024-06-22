@@ -9,23 +9,25 @@
 
 #include <filesystem>
 
+#include <chrono>
+
 namespace script
 {
 
-    auto nativePrintLn = [&](int argCount, Value* args) 
+    auto nativePrintLn = [](int argCount, Value* args) 
     {
         args[0].Print();
         printf("\n");
         return Value();
     };
 
-    auto nativePrint = [&](int argCount, Value* args) 
+    auto nativePrint = [](int argCount, Value* args) 
     {
         args[0].Print();
         return Value();
     };
 
-    auto nativeInput = [&](int argCount, Value* args)
+    auto nativeInput = [](int argCount, Value* args)
     {
         std::string str; 
         std::getline(std::cin, str);
@@ -53,94 +55,94 @@ namespace script
         // Load into module 
     }
 
-    auto cosNative = [&](int argc, Value* args) {
+    auto cosNative = [](int argc, Value* args) {
 
         return Value(cos(args[0].ToNumber()));
     };
 
-    auto sinNative = [&](int argc, Value* args) {
+    auto sinNative = [](int argc, Value* args) {
 
         return Value(sin(args[0].ToNumber()));
     };
 
-    auto tanNative = [&](int argc, Value* args) {
+    auto tanNative = [](int argc, Value* args) {
 
         return Value(tan(args[0].ToNumber()));
     };
 
-    auto acosNative = [&](int argc, Value* args) {
+    auto acosNative = [](int argc, Value* args) {
 
         return Value(acos(args[0].ToNumber()));
     };
 
-    auto asinNative = [&](int argc, Value* args) {
+    auto asinNative = [](int argc, Value* args) {
 
         return Value(asin(args[0].ToNumber()));
     };
 
-    auto atanNative = [&](int argc, Value* args) {
+    auto atanNative = [](int argc, Value* args) {
 
         return Value(atan(args[0].ToNumber()));
     };
 
-    auto atan2Native = [&](int argc, Value* args) {
+    auto atan2Native = [](int argc, Value* args) {
 
         return Value(atan2(args[0].ToNumber(), args[1].ToNumber()));
     };
 
-    auto sinhNative = [&](int argc, Value* args) {
+    auto sinhNative = [](int argc, Value* args) {
         return Value(sinh(args[0].ToNumber()));
     };
 
-    auto coshNative = [&](int argc, Value* args) {
+    auto coshNative = [](int argc, Value* args) {
         return Value(cosh(args[0].ToNumber()));
     };
 
-    auto tanhNative = [&](int argc, Value* args) {
+    auto tanhNative = [](int argc, Value* args) {
         return Value(tanh(args[0].ToNumber()));
     };
 
-    auto asinhNative = [&](int argc, Value* args) {
+    auto asinhNative = [](int argc, Value* args) {
         return Value(asinh(args[0].ToNumber()));
     };
 
-    auto acoshNative = [&](int argc, Value* args) {
+    auto acoshNative = [](int argc, Value* args) {
         return Value(acosh(args[0].ToNumber()));
     };
 
-    auto atanhNative = [&](int argc, Value* args) {
+    auto atanhNative = [](int argc, Value* args) {
         return Value(atanh(args[0].ToNumber()));
     };
 
-    auto logNative = [&](int argc, Value* args) {
+    auto logNative = [](int argc, Value* args) {
         return Value(log(args[0].ToNumber()));
     };
 
-    auto log2Native = [&](int argc, Value* args) {
+    auto log2Native = [](int argc, Value* args) {
         return Value(log2(args[0].ToNumber()));
     };
 
-    auto log10Native = [&](int argc, Value* args) {
+    auto log10Native = [](int argc, Value* args) {
         return Value(log10(args[0].ToNumber()));
     };
 
-    auto expNative = [&](int argc, Value* args) {
+    auto expNative = [](int argc, Value* args) {
         return Value(exp(args[0].ToNumber()));
     };
 
-    auto exp2Native = [&](int argc, Value* args) {
+    auto exp2Native = [](int argc, Value* args) {
         return Value(exp2(args[0].ToNumber()));
     };
 
-    auto expm1Native = [&](int argc, Value* args) {
+    auto expm1Native = [](int argc, Value* args) {
         return Value(expm1(args[0].ToNumber()));
     };
 
-    auto sqrtNative = [&](int argc, Value* args) {
+    auto sqrtNative = [](int argc, Value* args) {
         return Value(sqrt(args[0].ToNumber()));
     };
 
-    auto cbrtNative = [&](int argc, Value* args) {
+    auto cbrtNative = [](int argc, Value* args) {
         return Value(cbrt(args[0].ToNumber()));
     };
 
@@ -203,14 +205,14 @@ namespace script
         mdl->AddNativeFunction("cbrt", cbrtNative, 1);
     }
 
-    auto doesFileExistNative = [&](int argc, Value* args) {
+    auto doesFileExistNative = [](int argc, Value* args) {
 
         bool exists = std::filesystem::exists(((ObjString*)args[0].ToObject())->str);
 
         return Value(exists);
     };
 
-    auto readFileNative = [&](int argc, Value* args) {
+    auto readFileNative = [](int argc, Value* args) {
     
 
         std::ifstream file(((ObjString*)args[0].ToObject())->str);
@@ -244,11 +246,11 @@ namespace script
     }
 
 
-    auto dictionaryFunc = [&](int argc, Value* args) {
+    auto dictionaryFunc = [](int argc, Value* args) {
         return script::Value(script::AllocateDictionary());
     };
 
-    auto listFunc = [&](int argc, Value* args) {
+    auto listFunc = [](int argc, Value* args) {
         return script::Value(script::AllocateArray({}));
     };
 
@@ -256,5 +258,26 @@ namespace script
     {
         vm->AddNativeFunction("Dictionary", dictionaryFunc, 0);
         vm->AddNativeFunction("List", listFunc, 0);
+    }
+
+    auto nowFunc = [](int argc, Value* args) {
+
+        auto now = std::chrono::high_resolution_clock::now();
+
+        auto duration = now.time_since_epoch();
+
+        double seconds = std::chrono::duration<double>(duration).count();
+            
+        return Value(seconds);
+    };
+
+    void LoadStdTime(VM* vm, ObjModule* mdl)
+    {
+        if (mdl == nullptr)
+        {
+            vm->AddNativeFunction("now", nowFunc, 0);
+        }
+
+        mdl->AddNativeFunction("now", nowFunc, 0);
     }
 }

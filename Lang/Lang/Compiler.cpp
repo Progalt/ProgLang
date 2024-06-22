@@ -671,7 +671,7 @@ namespace script
 			setOp = OP_SET_LOCAL;
 		}
 		else {
-			arg = GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(name.value)));
+			arg = (int)GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(name.value)));
 			getOp = OP_GET_GLOBAL;
 			setOp = OP_SET_GLOBAL;
 		}
@@ -844,7 +844,7 @@ namespace script
 
 	void Compiler::WhileStatement()
 	{
-		int loopStart = GetCurrentChunk()->code.size();
+		int loopStart = (int)GetCurrentChunk()->code.size();
 
 		Consume(TK_OPEN_BRACE, "Expected '(' after 'while'");
 		Expression();
@@ -898,12 +898,12 @@ namespace script
 				DeclareVariableName("__itr");
 				
 				// We start our loop here
-				int loopStart = GetCurrentChunk()->code.size();
+				int loopStart = (int)GetCurrentChunk()->code.size();
 
 
 				EmitByte(OP_ITER);
 
-				int patch = GetCurrentChunk()->code.size();
+				int patch = (int)GetCurrentChunk()->code.size();
 				EmitBytes(0xFF, 0xFF);
 
 				Statement();
@@ -912,10 +912,10 @@ namespace script
 				
 
 				EmitLoop(loopStart, false);
-				int exit = GetCurrentChunk()->code.size() - loopStart - 2;
+				int exit = (int)GetCurrentChunk()->code.size() - loopStart - 2;
 
 				GetCurrentChunk()->code[patch] = (exit >> 8) & 0xFF;
-				GetCurrentChunk()->code[patch + 1] = exit & 0xFF;
+				GetCurrentChunk()->code[size_t(patch + 1)] = exit & 0xFF;
 				
 				EmitByte(OP_POP);
 				EndScope();
@@ -931,7 +931,7 @@ namespace script
 			ExpressionStatement();
 		}
 
-		int loopStart = GetCurrentChunk()->code.size();
+		int loopStart = (int)GetCurrentChunk()->code.size();
 		
 		int exitJump = -1;
 
@@ -947,7 +947,7 @@ namespace script
 		if (!Match(TK_CLOSE_BRACE))
 		{
 			int bodyJump = EmitJump(OP_JUMP);
-			int incrementStart = GetCurrentChunk()->code.size();
+			int incrementStart = (int)GetCurrentChunk()->code.size();
 
 			Expression();
 			EmitByte(OP_POP);
@@ -988,7 +988,7 @@ namespace script
 
 		Token className = parser.previous;
 
-		uint16_t nameConstant = GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value)));
+		uint16_t nameConstant = (uint16_t)GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value)));
 		DeclareVariable();
 
 
@@ -1030,7 +1030,7 @@ namespace script
 					ErrorAt(parser.current, "Exceeded parameter limit for function");
 				}
 
-				uint16_t constant = compiler.ParseVariable("Expected parameter name");
+				uint16_t constant = (uint16_t)compiler.ParseVariable("Expected parameter name");
 				compiler.DefineVariable(constant, false);
 
 			} while (Match(TK_COMMA));
@@ -1088,7 +1088,7 @@ namespace script
 	{
 		Consume(TK_IDENTIFIER, "Expected Identifier before '.'.");
 
-		uint16_t name = GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value)));
+		uint16_t name = (uint16_t)GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value)));
 
 		if (canAssign && Match(TK_ASSIGN)) {
 			Expression();
@@ -1113,10 +1113,6 @@ namespace script
 	{
 		TokenType type = parser.previous.type;
 
-		if (type == TK_PLUS_PLUS)
-		{
-			EmitByte(OP_INCREMENT);
-		}
 	}
 
 
@@ -1142,7 +1138,7 @@ namespace script
 		}
 		Consume(TK_IDENTIFIER, "Expected method name");
 
-		uint16_t name = GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value)));
+		uint16_t name = (uint16_t)GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value)));
 
 		
 		Function(type);
@@ -1165,7 +1161,7 @@ namespace script
 
 		Consume(TK_STRING, "Expected module name string. ");
 
-		uint16_t moduleName = GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value.substr(1, parser.previous.value.length() - 2))));
+		uint16_t moduleName = (uint16_t)GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value.substr(1, parser.previous.value.length() - 2))));
 		
 
 		if (Match(TK_AS))
@@ -1173,7 +1169,7 @@ namespace script
 			// Check if there is an 'as'
 			Consume(TK_IDENTIFIER, "Expected name to import module as.");
 
-			uint16_t asName = GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value)));
+			uint16_t asName = (uint16_t)GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value)));
 
 			EmitByte(OP_IMPORT_MODULE_AS);
 			EmitBytes((moduleName >> 8) & 0xFF, moduleName & 0xFF);
@@ -1215,14 +1211,14 @@ namespace script
 		EmitByte(instruction);
 		EmitByte(0xff);
 		EmitByte(0xff);
-		return GetCurrentChunk()->code.size() - 2;
+		return (int)GetCurrentChunk()->code.size() - 2;
 	}
 
 	void Compiler::EmitLoop(int loopStart, bool iter)
 	{
 		EmitByte(iter ? OP_ITER : OP_LOOP);
 
-		int offset = GetCurrentChunk()->code.size() - loopStart + 2;
+		int offset = (int)GetCurrentChunk()->code.size() - loopStart + 2;
 
 		if (offset > UINT16_MAX) 
 			Error("Loop body too large");
@@ -1233,7 +1229,7 @@ namespace script
 
 	void Compiler::PatchJump(int offset)
 	{
-		int jump = GetCurrentChunk()->code.size() - offset - 2;
+		int jump = (int)GetCurrentChunk()->code.size() - offset - 2;
 
 		if (jump > UINT16_MAX)
 		{
@@ -1241,7 +1237,7 @@ namespace script
 		}
 
 		GetCurrentChunk()->code[offset] = (jump >> 8) & 0xFF;
-		GetCurrentChunk()->code[offset + 1] = jump & 0xFF;
+		GetCurrentChunk()->code[size_t(offset + 1)] = jump & 0xFF;
 	}
 
 	void Compiler::And(bool canAssign)

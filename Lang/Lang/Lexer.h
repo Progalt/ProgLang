@@ -55,11 +55,11 @@ namespace script
 
 	struct Token
 	{
-		TokenType type;
+		TokenType type = TK_UNKNOWN;
 		std::string value;
 
 		// For debugging
-		int line, index;
+		int line = 0, index = 0;
 	};
 
 	class Lexer

@@ -4,7 +4,7 @@
 
 #include "Chunk.h"
 #include <functional>
-
+#include "Vendor/unordered_dense.h"
 
 namespace script
 {
@@ -52,7 +52,7 @@ namespace script
 		virtual std::string ToString() { return "nil"; }
 
 		// Any object can contain methods
-		std::unordered_map<std::string, Value> methods; 
+		ankerl::unordered_dense::map<std::string, Value> methods; 
 
 		bool isMarked = false;
 
@@ -93,8 +93,8 @@ namespace script
 
 		void Delete() override;
 
-		Value* values;
-		size_t size;
+		Value* values = nullptr;
+		size_t size = 0;
 
 		void PushBack(Value value);
 
@@ -111,9 +111,9 @@ namespace script
 	{
 	public:
 
-		double from;
-		double to;
-		double step;
+		double from = 0.0;
+		double to = 0.0;
+		double step = 1.0;
 
 		std::string ToString() override { return "range"; }
 
@@ -128,7 +128,7 @@ namespace script
 		// TODO: Make this a non C++ object
 
 		// We take the uint64_t hash from a value for this
-		std::unordered_map<uint64_t, Value> map;
+		ankerl::unordered_dense::map<uint64_t, Value> map;
 
 		std::string ToString() override { return "dictionary"; }
 
@@ -175,7 +175,7 @@ namespace script
 
 	inline ObjNative* NewNativeFunction(NativeFunc func, int arity)
 	{
-		ObjNative* native = new ObjNative;
+		ObjNative* native = new ObjNative();
 		native->function = func;
 		native->arity = arity;
 		native->type = OBJ_NATIVE;
@@ -202,7 +202,7 @@ namespace script
 		void Delete() override;
 
 		ObjClass* klass;
-		std::unordered_map<std::string, Value> fields;
+		ankerl::unordered_dense::map<std::string, Value> fields;
 
 		// We just return the base class to string
 		std::string ToString() override { return klass->ToString(); }
@@ -246,6 +246,8 @@ namespace script
 
 	enum FiberState
 	{
+		FIBER_UNKNOWN,
+
 		FIBER_ROOT, 
 	};
 

@@ -10,6 +10,8 @@
 #include "Memory.h"
 #include "Stack.h"
 
+#include "Vendor/unordered_dense.h"
+
 namespace script
 {
 	// Yes this shouldn't be here but I get compiler errors due to value otherwise
@@ -21,11 +23,10 @@ namespace script
 
 		Value reciever;
 		bool isNative = false;
-		union
-		{
-			ObjFunction* function;
-			ObjNative* native;
-		};
+	
+		ObjFunction* function = nullptr;
+		ObjNative* native = nullptr;
+		
 		
 	};
 
@@ -67,13 +68,13 @@ namespace script
 
 		Stack stack;
 
-		CallFrame* frames;
+		CallFrame* frames = nullptr;
 		size_t framesCount = 0;
 		size_t framesCapacity = 0;
 
 		ObjFiber* caller = nullptr;
 
-		FiberState state;
+		FiberState state = FIBER_UNKNOWN;
 	};
 
 	inline ObjFiber* CreateFiber(ObjFunction* func)
@@ -83,7 +84,6 @@ namespace script
 		fiber->type = OBJ_FIBER;
 		fiber->frames = (CallFrame*)Allocate(nullptr, 0, sizeof(CallFrame) * 64);
 		fiber->framesCapacity = 64;
-		fiber->stack = Stack();
 
 		Value val{};
 		val.MakeObject(func);
@@ -148,14 +148,14 @@ namespace script
 			return m_ExportedVariables;
 		}
 
-		Value& GetGlobal(const std::string& name)
+		Value* GetGlobal(const std::string& name)
 		{
 			if (m_GlobalVariables.find(name) != m_GlobalVariables.end())
 			{
-				return m_GlobalVariables[name];
+				return &m_GlobalVariables[name];
 			}
 
-			return Value();
+			return nullptr;
 		}
 
 		
@@ -200,17 +200,18 @@ namespace script
 
 		void DefineMethod(const std::string& name);
 
-		std::unordered_map<std::string, Value> m_GlobalVariables;
+		ankerl::unordered_dense::map<std::string, Value> m_GlobalVariables;
 
-		std::unordered_map<std::string, Value>* m_CurrentGlobal;
+		ankerl::unordered_dense::map<std::string, Value>* m_CurrentGlobal;
 
 		
 		std::vector<std::string> m_ExportedVariables;
 
-		std::unordered_map<std::string, Value> m_Modules;
+		ankerl::unordered_dense::map<std::string, Value> m_Modules;
 
 		ObjFiber* m_CurrentFiber = nullptr;
 		ObjModule* m_ExecutingModule = nullptr;
+
 
 		ObjFiber* ImportModule(const std::string& name, const std::string& asName = "");
 
@@ -219,9 +220,9 @@ namespace script
 		void MarkRoots();
 		void MarkObject(Object* obj);
 		void MarkValue(Value value);
-		void MarkTable(std::unordered_map<std::string, Value> table);
-		void MarkTable(std::unordered_map<uint64_t, Value> table);
-		void MarkStringTable(std::unordered_map<std::string, ObjString*> strs);
+		void MarkTable(ankerl::unordered_dense::map<std::string, Value> table);
+		void MarkTable(ankerl::unordered_dense::map<uint64_t, Value> table);
+		void MarkStringTable(ankerl::unordered_dense::map<std::string, ObjString*> strs);
 		void MarkArray(Value* arr, size_t length);
 
 		void CollectGarbage();

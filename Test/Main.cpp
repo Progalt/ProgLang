@@ -11,34 +11,38 @@ int main(int argc, char* argv[])
 R"(
 
 import "std:io";
+import "std:time" as time;
 
-func fizzbuzz(max) {
-
-	for (var i in 0..max) {
-		var mul3 = (i % 3) == 0; 
-		var mul5 = (i % 5) == 0;
-
-		var output = "";	
-
-		if (mul3) {
-			output = output + "Fizz";
-		}
-
-		if (mul5) {
-			output = output + "Buzz";
-		}
-		
-		if ((!mul3) and (!mul5)) {
-			output = "$i";
-		}
-
-		println(output);
-		
+func fib(n) {
+	if (n < 2) { 
+		return n;
 	}
+
+	return fib(n - 2) + fib(n - 1); 
+}
+
+var total = 0.0;
+var itrs = 10;
+
+for (var i in 0..itrs) {
+
+	println("Iteration $i");
+
+	var start = time.now(); 
+	var f = fib(32);
+	var elapsed = time.now() - start;
+
+	println("Fib: $f");
+	println("Elapsed Time: $elapsed");
+
+	total = total + elapsed;
 
 }
 
-fizzbuzz(50);
+var avg = total / itrs;
+
+println("-------------");
+println("Average: $avg");
 
 )";  
 

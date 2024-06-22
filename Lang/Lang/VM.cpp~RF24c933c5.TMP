@@ -57,25 +57,20 @@ namespace script
 #define READ_SHORT() \
     (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
 #define READ_CONSTANT() (frame->function->chunk.constants[READ_BYTE()])
-
-        // Stack functions
-#define PUSH(val) (*(m_CurrentFiber->stack.m_Top++) = (val))
-#define POP() (*(--m_CurrentFiber->stack.m_Top))
-#define PEEK(off) (m_CurrentFiber->stack.m_Top[-1 - off])
-
 #define BINARY_OP(op) \
     do { \
-      Value b = POP(); \
-      Value a = POP(); \
-      PUSH(a op b); \
+      Value b = m_CurrentFiber->stack.Pop(); \
+      Value a = m_CurrentFiber->stack.Pop(); \
+      m_CurrentFiber->stack.Push(a op b); \
     } while (false)
 
 
-
+        // Stack functions
+#define PUSH(val) (*(m_CurrentFiber->stack.m_Top++) = (val))
+#define POP() (*(--m_CurrentFiber->stack.m_Top)
 
         uint8_t instruction = 0;
 
-#ifdef DEBUG_STACK_TRACE
         auto stackTrace = [&]() {
             printf("          ");
             for (Value* slot = m_CurrentFiber->stack.m_Stack; slot < m_CurrentFiber->stack.m_Top; slot++) {
@@ -89,6 +84,7 @@ namespace script
             };
 
 
+#ifdef DEBUG_STACK_TRACE
 #define STACK_TRACE() stackTrace()
 #else 
 #define STACK_TRACE()
@@ -107,7 +103,7 @@ namespace script
 
         // Computed goto uses dispatch tables to jump
         // Its a decent speed up over regular switches
-#if COMPUTED_GOTO 
+#if COMPUTED_GOTO
 
         static void* dispatchTable[] = {
     #define OPCODE(name) &&code_##name,
@@ -138,7 +134,27 @@ do { \
 
     
 #endif
-	
+		
+//        for (;;) 
+//        {
+//
+//            if (memoryManager.shouldCollectGarbage) {
+//                CollectGarbage();
+//                memoryManager.shouldCollectGarbage = false;
+//                memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR;
+//            }
+////#define VM_STACK_TRACE
+//#ifdef VM_STACK_TRACE
+//            printf("          ");
+//            for (Value* slot = m_CurrentFiber->stack.m_Stack; slot < m_CurrentFiber->stack.m_Top; slot++) {
+//                printf("[ ");
+//                slot->Print();
+//                printf(" ]");
+//            }
+//            printf("\n");
+//
+//            DisassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code.data()));
+//#endif
             
         INTERPRET_LOOP
         {
@@ -157,7 +173,7 @@ do { \
         }
         CASE_CODE(NEGATE): {
             // TODO: Make this better
-            Value vl = POP();
+            Value vl = m_CurrentFiber->stack.Pop();
             double val = -vl.ToNumber();
             PUSH(Value(val));
             DISPATCH();
@@ -173,7 +189,7 @@ do { \
             DISPATCH();
         CASE_CODE(NOT):
         {
-            Value v = POP();
+            Value v = m_CurrentFiber->stack.Pop();
             v.MakeBool(!v.AsBool());
             PUSH(v);
 
@@ -181,35 +197,35 @@ do { \
         }
         CASE_CODE(EQUAL):
         {
-            Value a = POP();
-            Value b = POP();
+            Value a = m_CurrentFiber->stack.Pop();
+            Value b = m_CurrentFiber->stack.Pop();
 
-            PUSH(Value(a == b));
+            m_CurrentFiber->stack.Push(Value(a == b));
 
             DISPATCH();
         }
         CASE_CODE(LESS):
         {
-            Value a = POP();
-            Value b = POP();
+            Value a = m_CurrentFiber->stack.Pop();
+            Value b = m_CurrentFiber->stack.Pop();
 
-            PUSH(Value(a > b));
+            m_CurrentFiber->stack.Push(a > b);
 
             DISPATCH();
         }
         CASE_CODE(GREATER):
         {
-            Value a = POP();
-            Value b = POP();
+            Value a = m_CurrentFiber->stack.Pop();
+            Value b = m_CurrentFiber->stack.Pop();
 
-            PUSH(Value(a < b));
+            m_CurrentFiber->stack.Push(a < b);
 
             DISPATCH();
         }
         CASE_CODE(ADD):
         {
-            Value b = POP();
-            Value a = POP();
+            Value b = m_CurrentFiber->stack.Pop();
+            Value a = m_CurrentFiber->stack.Pop();
 
             if (a.IsObjType(OBJ_ARRAY))
             {
@@ -224,7 +240,7 @@ do { \
 
                 ObjString* appended = str1->AppendNew(str2);
 
-                PUSH(Value(appended));
+                m_CurrentFiber->stack.Push(Value(appended));
 
                 DISPATCH();
             }
@@ -232,7 +248,7 @@ do { \
             double anum = a.ToNumber();
             double bnum = b.ToNumber();
 
-            PUSH(Value(anum + bnum));
+            m_CurrentFiber->stack.Push(Value(anum + bnum));
 
             DISPATCH();
         }
@@ -241,33 +257,33 @@ do { \
         CASE_CODE(DIVIDE):   BINARY_OP(/ ); DISPATCH();
         CASE_CODE(POWER): 
         {
-            Value b = POP();
-            Value a = POP();
+            Value b = m_CurrentFiber->stack.Pop();
+            Value a = m_CurrentFiber->stack.Pop();
 
             double power = std::pow(a.ToNumber(), b.ToNumber());
 
-            PUSH(Value(power));
+            m_CurrentFiber->stack.Push(Value(power));
 
             DISPATCH();
         }
         CASE_CODE(MODULO):
         {
-            Value b = POP();
-            Value a = POP();
+            Value b = m_CurrentFiber->stack.Pop();
+            Value a = m_CurrentFiber->stack.Pop();
 
             double remainder = std::remainder(a.ToNumber(), b.ToNumber());
-            PUSH(Value(remainder));
+            m_CurrentFiber->stack.Push(Value(remainder));
 
             DISPATCH();
         }
-        CASE_CODE(POP): POP(); DISPATCH();
+        CASE_CODE(POP): m_CurrentFiber->stack.Pop(); DISPATCH();
         CASE_CODE(DEFINE_GLOBAL):
         {
             uint16_t constant = READ_SHORT();
 
             ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
 
-            m_CurrentGlobal->operator[](name->str) = POP();
+            m_CurrentGlobal->operator[](name->str) = m_CurrentFiber->stack.Pop();
 
             DISPATCH();
         }
@@ -281,7 +297,7 @@ do { \
 
             ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
 
-            m_CurrentGlobal->operator[](name->str) = POP();
+            m_CurrentGlobal->operator[](name->str) = m_CurrentFiber->stack.Pop();
 
             m_ExportedVariables.push_back(name->str);
 
@@ -296,32 +312,32 @@ do { \
 
                 for (uint16_t i = 0; i < size; i++)
                 {
-                    Value val = POP();
+                    Value val = m_CurrentFiber->stack.Pop();
 
                     value[size - i - 1] = val;
                 }
 
-                PUSH(Value(AllocateArray(value)));
+                m_CurrentFiber->stack.Push(Value(AllocateArray(value)));
             }
             DISPATCH();
         }
         CASE_CODE(CREATE_RANGE):
         {
-            Value end = POP();
-            Value start = POP();
+            Value end = m_CurrentFiber->stack.Pop();
+            Value start = m_CurrentFiber->stack.Pop();
 
             ObjRange* range = CreateRange();
             range->from = start.ToNumber();
             range->to = end.ToNumber();
 
-            PUSH(Value(range));
+            m_CurrentFiber->stack.Push(Value(range));
 
             DISPATCH();
         }
         CASE_CODE(SUBSCRIPT_READ):
         {
-            Value idx = POP();
-            Value arr = POP();
+            Value idx = m_CurrentFiber->stack.Pop();
+            Value arr = m_CurrentFiber->stack.Pop();
 
             if (arr.IsObjType(OBJ_DICTIONARY))
             {
@@ -330,7 +346,7 @@ do { \
                 auto it = dict->map.find(idx.Hash());
                 if (it != dict->map.end())
                 {
-                    PUSH(it->second);
+                    m_CurrentFiber->stack.Push(it->second);
                     DISPATCH();
                 }
 
@@ -357,14 +373,14 @@ do { \
                 ObjArray* obj = (ObjArray*)arr.ToObject();
 
                 if (idxInt >= 0)
-                    PUSH(obj->values[idxInt]);
+                    m_CurrentFiber->stack.Push(obj->values[idxInt]);
                 else
                 {
                     uint64_t absIdx = (-idxInt);//% obj->values.size();
 
 
 
-                    PUSH(obj->values[obj->size - absIdx]);
+                    m_CurrentFiber->stack.Push(obj->values[obj->size - absIdx]);
                 }
             }
             else
@@ -378,9 +394,9 @@ do { \
         }
         CASE_CODE(SUBSCRIPT_WRITE):
         {
-            Value item = POP();
-            Value idx = POP();
-            Value arr = POP();
+            Value item = m_CurrentFiber->stack.Pop();
+            Value idx = m_CurrentFiber->stack.Pop();
+            Value arr = m_CurrentFiber->stack.Pop();
 
             if (arr.IsObjType(OBJ_DICTIONARY))
             {
@@ -414,7 +430,7 @@ do { \
                 {
                     obj->values[idxInt] = item;
 
-                    PUSH(item);
+                    m_CurrentFiber->stack.Push(item);
                 }
                 else
                 {
@@ -432,9 +448,9 @@ do { \
         CASE_CODE(SLICE_ARRAY):
         {
             {
-                Value idx2 = POP();
-                Value idx = POP();
-                Value arr = POP();
+                Value idx2 = m_CurrentFiber->stack.Pop();
+                Value idx = m_CurrentFiber->stack.Pop();
+                Value arr = m_CurrentFiber->stack.Pop();
 
                 if (!idx.IsNumber() || !idx2.IsNumber())
                 {
@@ -460,7 +476,7 @@ do { \
                     value[i - idxInt] = obj->values[i];
                 }
 
-                PUSH(Value(AllocateArray(value)));
+                m_CurrentFiber->stack.Push(Value(AllocateArray(value)));
             }
             DISPATCH();
         }
@@ -474,7 +490,7 @@ do { \
             if (it != m_CurrentGlobal->end())
             {
                 Value value = it->second;
-                PUSH(value);
+                m_CurrentFiber->stack.Push(value);
             }
             else
             {
@@ -499,7 +515,7 @@ do { \
             }
 
 
-            it->second = PEEK(0);
+            it->second = m_CurrentFiber->stack.Peek(0);
 
             DISPATCH();
         }
@@ -507,7 +523,9 @@ do { \
         {
             uint16_t constant = READ_SHORT();
 
-            PUSH(frame->slots[constant]);
+            // m_CurrentFiber->stack.Push(m_CurrentFiber->stack[constant]);
+
+            m_CurrentFiber->stack.Push(frame->slots[constant]);
 
             DISPATCH();
         }
@@ -515,7 +533,8 @@ do { \
         {
             uint16_t constant = READ_SHORT();
 
-            frame->slots[constant] = PEEK(0);
+            //m_CurrentFiber->stack[constant] = m_CurrentFiber->stack.Peek(0);
+            frame->slots[constant] = m_CurrentFiber->stack.Peek(0);
 
 
             DISPATCH();
@@ -524,14 +543,14 @@ do { \
         {
             uint16_t offset = READ_SHORT();
 
-            if (PEEK(0).IsBool())
+            if (m_CurrentFiber->stack.Peek(0).IsBool())
             {
-                if (PEEK(0).AsBool() == false)
+                if (m_CurrentFiber->stack.Peek(0).AsBool() == false)
                 {
                     frame->ip += offset;
                 }
             }
-            else if (PEEK(0).IsNil())
+            else if (m_CurrentFiber->stack.Peek(0).IsNil())
             {
                 frame->ip += offset;
             }
@@ -554,7 +573,7 @@ do { \
         CASE_CODE(CALL):
         {
             int argCount = READ_BYTE();
-            if (!CallValue(PEEK(argCount), argCount))
+            if (!CallValue(m_CurrentFiber->stack.Peek(argCount), argCount))
             {
                 Error("Could not call function");
                 return INTERPRET_RUNTIME_ERROR;
@@ -573,7 +592,7 @@ do { \
             ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
 
 
-            PUSH(Value(NewClass(name->str)));
+            m_CurrentFiber->stack.Push(Value(NewClass(name->str)));
 
             DISPATCH();
         }
@@ -584,7 +603,7 @@ do { \
 
             ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
 
-            Value stackObj = PEEK(0);
+            Value stackObj = m_CurrentFiber->stack.Peek(0);
             Object* obj = (Object*)stackObj.ToObject();
             auto it = obj->methods.find(name->str);
             if (it != obj->methods.end())
@@ -592,8 +611,8 @@ do { \
 
                 if (it->second.IsObjType(OBJ_CLASS))
                 {
-                    POP();
-                    PUSH(it->second);
+                    m_CurrentFiber->stack.Pop();
+                    m_CurrentFiber->stack.Push(it->second);
                     DISPATCH();
                 }
 
@@ -601,8 +620,8 @@ do { \
                 // It doesn't make sense
                 if (stackObj.IsObjType(OBJ_MODULE))
                 {
-                    POP();
-                    PUSH(it->second);
+                    m_CurrentFiber->stack.Pop();
+                    m_CurrentFiber->stack.Push(it->second);
                     DISPATCH();
                 }
 
@@ -613,8 +632,8 @@ do { \
                 else 
                     bound = NewNativeBoundMethod(stackObj, (ObjNative*)it->second.ToObject());
 
-                POP();
-                PUSH(Value(bound));
+                m_CurrentFiber->stack.Pop();
+                m_CurrentFiber->stack.Push(Value(bound));
 
                 DISPATCH();
             }
@@ -627,8 +646,8 @@ do { \
             if (itfield != instance->fields.end())
             {
                 Value value = itfield->second;
-                POP();
-                PUSH(value);
+                m_CurrentFiber->stack.Pop();
+                m_CurrentFiber->stack.Push(value);
                 DISPATCH();
             }
 
@@ -639,23 +658,23 @@ do { \
         }
         CASE_CODE(SET_PROPERTY):
         {
-            if (!PEEK(1).IsObjType(OBJ_INSTANCE))
+            if (!m_CurrentFiber->stack.Peek(1).IsObjType(OBJ_INSTANCE))
             {
                 Error("Set field: Only instances of classes can have fields");
                 return INTERPRET_RUNTIME_ERROR;
             }
 
-            ObjInstance* instance = (ObjInstance*)PEEK(1).ToObject();
+            ObjInstance* instance = (ObjInstance*)m_CurrentFiber->stack.Peek(1).ToObject();
 
             uint16_t constant = READ_SHORT();
 
             ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
                 
-            instance->fields[name->str] = PEEK(0);
+            instance->fields[name->str] = m_CurrentFiber->stack.Peek(0);
 
-            Value value = POP();
-            POP();
-            PUSH(value);
+            Value value = m_CurrentFiber->stack.Pop();
+            m_CurrentFiber->stack.Pop();
+            m_CurrentFiber->stack.Push(value);
 
             DISPATCH();
         }
@@ -683,7 +702,7 @@ do { \
 
                 for (uint8_t i = 0; i < args; i++)
                 {
-                    Value val = POP();
+                    Value val = m_CurrentFiber->stack.Pop();
 
                     // val.Print();
 
@@ -715,7 +734,7 @@ do { \
 
                 }
 
-                PUSH(Value(memoryManager.AllocateString(output)));
+                m_CurrentFiber->stack.Push(Value(memoryManager.AllocateString(output)));
             }
             DISPATCH();
         }
@@ -813,11 +832,11 @@ do { \
 
                
 
-            Value result = POP();
+            Value result = m_CurrentFiber->stack.Pop();
             m_CurrentFiber->framesCount--;
             if (m_CurrentFiber->framesCount == 0)
             {
-                POP();
+                m_CurrentFiber->stack.Pop();
 
                 if (m_ExecutingModule)
                 {
@@ -850,7 +869,7 @@ do { \
                     m_CurrentFiber = m_CurrentFiber->caller;
 
                     // NOTE: This might break
-                    PUSH(result);
+                    m_CurrentFiber->stack.Push(result);
 
                     frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
                     DISPATCH();
@@ -862,7 +881,7 @@ do { \
                 
 
             m_CurrentFiber->stack.m_Top = frame->slots;
-            PUSH(result);
+            m_CurrentFiber->stack.Push(result);
             frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
               
                

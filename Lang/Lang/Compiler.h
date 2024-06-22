@@ -31,19 +31,19 @@ namespace script
 	{
 		std::function<void(bool)> prefix;
 		std::function<void(bool)> infix;
-		Precedence precedence;
+		Precedence precedence = PREC_NONE;
 	};
 
 	struct Local
 	{
 		Token name;
-		uint32_t depth;
+		uint32_t depth = 0;
 	};
 
 	struct Parser
 	{
 		std::vector<Token> tokens;
-		size_t tokenOffset;
+		size_t tokenOffset = 0;
 
 		Token previous;
 		Token current;
@@ -78,14 +78,14 @@ namespace script
 		}
 
 
-		Compiler* m_Enclosing;
+		Compiler* m_Enclosing = nullptr;
 
-		ObjFunction* m_Function;
-		FunctionType m_FunctionType;
+		ObjFunction* m_Function = nullptr;
+		FunctionType m_FunctionType = TYPE_SCRIPT;
 
 		uint32_t m_LocalCount = 0;
 		uint32_t m_ScopeDepth = 0;
-		Local* m_Locals;
+		Local* m_Locals = nullptr;
 
 		void MarkInitialised();
 

@@ -36,8 +36,8 @@ namespace script
 		{
 			WriteByte(OP_CONSTANT_LONG);
 
-			uint8_t higher = idx >> 8;
-			uint8_t lower = (idx & 0xFF);
+			uint8_t higher = uint8_t(idx >> 8);
+			uint8_t lower = uint8_t(idx & 0xFF);
 
 			WriteByte(higher);
 			WriteByte(lower);
@@ -395,9 +395,6 @@ namespace script
 			break;
 		case OP_METHOD:
 			constantInstructionLong("OP_METHOD");
-			break;
-		case OP_INVOKE:
-			invokeInstruction("OP_INVOKE");
 			break;
 		case OP_STRING_INTERP:
 			byteInstruction("OP_STRING_INTERP");

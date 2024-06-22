@@ -16,6 +16,8 @@ namespace script
 
     void LoadStdFilesystem(VM* vm, ObjModule* mdl);
 
+    void LoadStdTime(VM* vm, ObjModule* mdl);
+
     // Always loaded 
     void LoadStdPrimitives(VM* vm);
 }
