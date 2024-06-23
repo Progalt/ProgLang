@@ -43,18 +43,19 @@ namespace script
 
     InterpretResult VM::Run()
     {
-        //this->chunk = c;
 
         CallFrame* frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
         m_CurrentGlobal = &m_GlobalVariables;
 
+        // Store the ptr in a value to avoid the ptr->ptr
+        // With how frequent this gets access its important
+        uint8_t* ip = frame->ip;
+
         // Welcome to define hell
 
-        uint32_t instructionCount = 0;
-
-#define READ_BYTE() (*frame->ip++)
+#define READ_BYTE() (*ip++)
 #define READ_SHORT() \
-    (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+    (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 #define READ_CONSTANT() (frame->function->chunk.constants[READ_BYTE()])
 
         // Stack functions
@@ -84,7 +85,7 @@ namespace script
             }
             printf("\n");
 
-            DisassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code.data()));
+            DisassembleInstruction(&frame->function->chunk, (int)(ip - frame->function->chunk.code.data()));
             };
 
 
@@ -153,8 +154,7 @@ do { \
         INTERPRET_LOOP
         {
         CASE_CODE(CONSTANT): {
-            Value constant = READ_CONSTANT();
-            PUSH(constant);
+            PUSH(READ_CONSTANT());
             DISPATCH();
         }
         CASE_CODE(CONSTANT_LONG):
@@ -546,12 +546,12 @@ do { \
             {
                 if (PEEK(0).AsBool() == false)
                 {
-                    frame->ip += offset;
+                    ip += offset;
                 }
             }
             else if (PEEK(0).IsNil())
             {
-                frame->ip += offset;
+                ip += offset;
             }
 
             DISPATCH();
@@ -559,13 +559,13 @@ do { \
         CASE_CODE(JUMP):
         {
             uint16_t offset = READ_SHORT();
-            frame->ip += offset;
+            ip += offset;
             DISPATCH();
         }
         CASE_CODE(LOOP):
         {
             uint16_t offset = READ_SHORT();
-            frame->ip -= offset;
+            ip -= offset;
 
             DISPATCH();
         }
@@ -578,8 +578,9 @@ do { \
                 return INTERPRET_RUNTIME_ERROR;
             }
 
+            frame->ip = ip;
             frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
-
+            ip = frame->ip;
                
 
             DISPATCH();
@@ -758,7 +759,7 @@ do { \
                 uint32_t idx = (uint32_t)trunc(it);
 
                 if (idx >= arr->size)
-                    frame->ip += jumpOffset;
+                    ip += jumpOffset;
 
                 //*iterator = Value((double)(idx + 1));
                 *value = arr->values[idx];
@@ -773,7 +774,7 @@ do { \
                     it = range->from;
 
                 if (it >= range->to)
-                    frame->ip += jumpOffset;
+                    ip += jumpOffset;
 
                 *value = it; 
                 iterator->MakeNumber(it + range->step);
@@ -801,7 +802,9 @@ do { \
                 // We have a fiber now let's run it
                 // Just make it be the current fiber we execute 
                 m_CurrentFiber = fiber;
+                frame->ip = ip;
                 frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
+                ip = frame->ip;
             }
 
             DISPATCH();
@@ -821,7 +824,9 @@ do { \
                 // We have a fiber now let's run it
                 // Just make it be the current fiber we execute 
                 m_CurrentFiber = fiber;
+                frame->ip = ip;
                 frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
+                ip = frame->ip;
             }
 
             DISPATCH();
@@ -869,7 +874,9 @@ do { \
                     // NOTE: This might break
                     PUSH(result);
 
+                    frame->ip = ip;
                     frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
+                    ip = frame->ip;
                     DISPATCH();
                 }
                 else 
@@ -880,8 +887,9 @@ do { \
 
             m_CurrentFiber->stack.m_Top = frame->slots;
             PUSH(result);
+            frame->ip = ip;
             frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
-              
+            ip = frame->ip;
                
             DISPATCH();
         }

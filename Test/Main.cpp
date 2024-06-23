@@ -23,7 +23,7 @@ func fib(n) {
 
 var total = 0.0;
 var itrs = 10;
-var fibnth = 32;
+var fibnth = 24;
 
 for (var i in 0..itrs) {
 
