@@ -485,17 +485,19 @@ do { \
             uint16_t constant = READ_SHORT();
 
             ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
-
             {
                 auto it = m_CurrentGlobal->find(name->str);
-
                 if (it == m_CurrentGlobal->end())
                 {
                     Error("cannot get global variable: \"" + std::string(name->str) + "\" as it does not exist.");
                     return INTERPRET_RUNTIME_ERROR;
+                    PUSH(it->second);
                 }
-
-                PUSH(it->second);
+                else
+                {
+                    Error("cannot get global variable: \"" + std::string(name->str) + "\" as it does not exist.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
             }
 
 

@@ -23,13 +23,14 @@ func fib(n) {
 
 var total = 0.0;
 var itrs = 10;
+var fibnth = 32;
 
 for (var i in 0..itrs) {
 
 	println("Iteration $i");
 
 	var start = time.now(); 
-	var f = fib(32);
+	var f = fib(fibnth);
 	var elapsed = time.now() - start;
 
 	println("Fib: $f");
