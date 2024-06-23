@@ -223,6 +223,10 @@ namespace script
 					EmitToken(TK_NAMESPACE, iden);
 				else if (iden == "import")
 					EmitToken(TK_IMPORT, iden);
+				else if (iden == "async")
+					EmitToken(TK_ASYNC, iden);
+				else if (iden == "await")
+					EmitToken(TK_AWAIT, iden);
 				else 
 					EmitToken(TK_IDENTIFIER, iden);
 

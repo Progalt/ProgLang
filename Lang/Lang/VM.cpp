@@ -51,17 +51,23 @@ namespace script
         // With how frequent this gets access its important
         uint8_t* ip = frame->ip;
 
+        Stack* stack = &m_CurrentFiber->stack;
+
+        // Does this have any benefit? 
+       Value* constantTable = frame->function->chunk.constants.data();
+
         // Welcome to define hell
 
 #define READ_BYTE() (*ip++)
 #define READ_SHORT() \
     (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
-#define READ_CONSTANT() (frame->function->chunk.constants[READ_BYTE()])
+#define READ_CONSTANT() (constantTable[READ_BYTE()])
+#define READ_CONSTANT_LONG() (constantTable[READ_SHORT()])
 
         // Stack functions
-#define PUSH(val) (*(m_CurrentFiber->stack.m_Top++) = (val))
-#define POP() (*(--m_CurrentFiber->stack.m_Top))
-#define PEEK(off) (m_CurrentFiber->stack.m_Top[-1 - off])
+#define PUSH(val) (*(stack->m_Top++) = (val))
+#define POP() (*(--stack->m_Top))
+#define PEEK(off) (stack->m_Top[-1 - off])
 
 #define BINARY_OP(op) \
     do { \
@@ -75,6 +81,7 @@ namespace script
 
         uint8_t instruction = 0;
 
+        // Define the stack trace
 #ifdef DEBUG_STACK_TRACE
         auto stackTrace = [&]() {
             printf("          ");
@@ -94,6 +101,9 @@ namespace script
 #define STACK_TRACE()
 #endif
 
+        // Garbage collect
+        // TODO: Improve garbage collection
+        // Maybe use an event loop
 #define GARBAGE_COLLECT() \
 do { \
     if (memoryManager.shouldCollectGarbage) { \
@@ -150,26 +160,27 @@ do { \
     
 #endif
 	
-            
+        // Begin the VM interpret loop
+
         INTERPRET_LOOP
         {
-        CASE_CODE(CONSTANT): {
+        CASE_CODE(CONSTANT): 
+        {
             PUSH(READ_CONSTANT());
+
             DISPATCH();
         }
         CASE_CODE(CONSTANT_LONG):
         {
-            uint16_t idx = READ_SHORT();
-
-            PUSH(frame->function->chunk.constants[idx]);
+            PUSH(READ_CONSTANT_LONG());
 
             DISPATCH();
         }
         CASE_CODE(NEGATE): {
             // TODO: Make this better
             Value vl = POP();
-            double val = -vl.ToNumber();
-            PUSH(Value(val));
+            vl.MakeNumber(-vl.ToNumber());
+            PUSH(vl);
             DISPATCH();
         }
         CASE_CODE(NIL):
@@ -221,34 +232,46 @@ do { \
             Value b = POP();
             Value a = POP();
 
-            if (a.IsObjType(OBJ_ARRAY))
+            if (a.IsObject())
             {
+                if (a.IsObjType(OBJ_ARRAY))
+                {
+                    assert(false);
+                    DISPATCH();
+                }
+                else if (a.IsObjType(OBJ_STRING) && b.IsObjType(OBJ_STRING))
+                {
 
-                DISPATCH();
-            }
-            else if (a.IsObjType(OBJ_STRING) && b.IsObjType(OBJ_STRING))
-            {
+                    ObjString* str1 = (ObjString*)a.ToObject();
+                    ObjString* str2 = (ObjString*)b.ToObject();
 
-                ObjString* str1 = (ObjString*)a.ToObject();
-                ObjString* str2 = (ObjString*)b.ToObject();
+                    PUSH(Value(str1->AppendNew(str2)));
 
-                ObjString* appended = str1->AppendNew(str2);
-
-                PUSH(Value(appended));
-
-                DISPATCH();
+                    DISPATCH();
+                }
             }
 
             double anum = a.ToNumber();
             double bnum = b.ToNumber();
 
-            PUSH(Value(anum + bnum));
+            a.MakeNumber(anum + bnum);
+
+            PUSH(a);
 
             DISPATCH();
         }
-        CASE_CODE(SUBTRACT): BINARY_OP(-); DISPATCH();
+        CASE_CODE(SUBTRACT): 
+        {
+
+            double bnum = POP().ToNumber();
+            double anum = POP().ToNumber();
+
+            PUSH(Value(anum - bnum));
+
+            DISPATCH();
+        }
         CASE_CODE(MULTIPLY): BINARY_OP(*); DISPATCH();
-        CASE_CODE(DIVIDE):   BINARY_OP(/ ); DISPATCH();
+        CASE_CODE(DIVIDE):   BINARY_OP(/); DISPATCH();
         CASE_CODE(POWER): 
         {
             Value b = POP();
@@ -256,7 +279,8 @@ do { \
 
             double power = std::pow(a.ToNumber(), b.ToNumber());
 
-            PUSH(Value(power));
+            a.MakeNumber(power);
+            PUSH(a);
 
             DISPATCH();
         }
@@ -270,12 +294,16 @@ do { \
 
             DISPATCH();
         }
-        CASE_CODE(POP): POP(); DISPATCH();
+        CASE_CODE(POP): 
+        {
+            POP(); 
+            DISPATCH();
+        }
         CASE_CODE(DEFINE_GLOBAL):
         {
-            uint16_t constant = READ_SHORT();
+            // uint16_t constant = READ_SHORT();
 
-            ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
+            ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
 
             m_CurrentGlobal->operator[](name->str) = POP();
 
@@ -287,9 +315,9 @@ do { \
             // Export is the same as define global 
             // But we add it to a list of exported variables so its easier to get later. 
 
-            uint16_t constant = READ_SHORT();
+            // uint16_t constant = READ_SHORT();
 
-            ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
+            ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
 
             m_CurrentGlobal->operator[](name->str) = POP();
 
@@ -461,7 +489,8 @@ do { \
                 {
                     Error("Object is not slicable as it is not an array");
                     return INTERPRET_RUNTIME_ERROR;
-                }
+                } 
+                
 
                 int64_t idxInt = (size_t)idx.ToNumber();
                 int64_t idx2Int = (size_t)idx2.ToNumber();
@@ -482,9 +511,9 @@ do { \
         CASE_CODE(GET_GLOBAL):
         {
 
-            uint16_t constant = READ_SHORT();
+            // uint16_t constant = READ_SHORT();
 
-            ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
+            ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
 
             {
                 auto it = m_CurrentGlobal->find(name->str);
@@ -503,9 +532,9 @@ do { \
         } 
         CASE_CODE(SET_GLOBAL):
         {
-            uint16_t constant = READ_SHORT();
+            // uint16_t constant = READ_SHORT();
 
-            ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
+            ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
 
             {
                 auto it = m_CurrentGlobal->find(name->str);
@@ -581,15 +610,17 @@ do { \
             frame->ip = ip;
             frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
             ip = frame->ip;
+            constantTable = frame->function->chunk.constants.data();
+            stack = &m_CurrentFiber->stack;
                
 
             DISPATCH();
         }
         CASE_CODE(CLASS):
         {
-            uint16_t constant = READ_SHORT();
+            //uint16_t constant = READ_SHORT();
 
-            ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
+            ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
 
 
             PUSH(Value(NewClass(name->str)));
@@ -600,9 +631,9 @@ do { \
         {
 
             // Any object could have methods
-            uint16_t constant = READ_SHORT();
+            //uint16_t constant = READ_SHORT();
 
-            ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
+            ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
 
             // TODO: Make this better
             // Its quite slow 
@@ -665,9 +696,9 @@ do { \
 
             ObjInstance* instance = (ObjInstance*)PEEK(1).ToObject();
 
-            uint16_t constant = READ_SHORT();
+            //uint16_t constant = READ_SHORT();
 
-            ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
+            ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
                 
             instance->fields[name->str] = PEEK(0);
 
@@ -679,9 +710,8 @@ do { \
         }
         CASE_CODE(METHOD):
         {
-            uint16_t constant = READ_SHORT();
 
-            ObjString* name = (ObjString*)frame->function->chunk.constants[constant].ToObject();
+            ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
             DefineMethod(name->str);
             DISPATCH();
         }
@@ -703,8 +733,6 @@ do { \
                 {
                     Value val = POP();
 
-                    // val.Print();
-
                     // TODO: This could probably be improved 
 
                     // String inputs are flipped to where they should be on the output so always prepend the string 
@@ -717,8 +745,7 @@ do { \
                     {
                         Object* obj = val.ToObject();
 
-                        //output = obj->ToString() + output;
-
+                        // TODO: More object types
                         switch (obj->type)
                         {
                         case OBJ_STRING:
@@ -739,9 +766,11 @@ do { \
         }
         CASE_CODE(ITER):
         {
-            Value* value = m_CurrentFiber->stack.m_Top - 3;
-            Value seq = *(m_CurrentFiber->stack.m_Top - 2);
-            Value* iterator = m_CurrentFiber->stack.m_Top - 1;
+            // Iteration using in
+
+            Value* value = stack->m_Top - 3;
+            Value seq = *(stack->m_Top - 2);
+            Value* iterator = stack->m_Top - 1;
 
             uint16_t jumpOffset = READ_SHORT();
 
@@ -789,11 +818,39 @@ do { \
 
             DISPATCH();
         }
+        CASE_CODE(AWAIT):
+        {
+            
+            Value v = POP();
+
+            if (m_CurrentFiber->caller != nullptr)
+            {
+                ObjFiber* callee = m_CurrentFiber;
+
+                // We want to go back to the caller
+                // And setup a callback to notify what to do and to return to this
+
+
+
+                m_CurrentFiber->stack = *stack;
+                m_CurrentFiber = m_CurrentFiber->caller;
+                stack = &m_CurrentFiber->stack;
+
+
+
+                frame->ip = ip;
+                frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
+                ip = frame->ip;
+                constantTable = frame->function->chunk.constants.data();
+            }
+
+            DISPATCH();
+        }
         CASE_CODE(IMPORT_MODULE):
         {
-            uint16_t moduleNameConstant = READ_SHORT();
+            // uint16_t moduleNameConstant = READ_SHORT();
 
-            ObjString* moduleName = (ObjString*)frame->function->chunk.constants[moduleNameConstant].ToObject();
+            ObjString* moduleName = (ObjString*)READ_CONSTANT_LONG().ToObject();
 
             ObjFiber* fiber = ImportModule(moduleName->str);
 
@@ -801,21 +858,24 @@ do { \
             {
                 // We have a fiber now let's run it
                 // Just make it be the current fiber we execute 
+                m_CurrentFiber->stack = *stack;
                 m_CurrentFiber = fiber;
+                stack = &m_CurrentFiber->stack;
                 frame->ip = ip;
                 frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
                 ip = frame->ip;
+                constantTable = frame->function->chunk.constants.data();
             }
 
             DISPATCH();
         }
         CASE_CODE(IMPORT_MODULE_AS):
         {
-            uint16_t moduleNameConstant = READ_SHORT();
-            uint16_t asNameConstant = READ_SHORT();
+            //uint16_t moduleNameConstant = READ_SHORT();
+            //uint16_t asNameConstant = READ_SHORT();
 
-            ObjString* moduleName = (ObjString*)frame->function->chunk.constants[moduleNameConstant].ToObject();
-            ObjString* asName = (ObjString*)frame->function->chunk.constants[asNameConstant].ToObject();
+            ObjString* moduleName = (ObjString*)READ_CONSTANT_LONG().ToObject();
+            ObjString* asName = (ObjString*)READ_CONSTANT_LONG().ToObject();
 
             ObjFiber* fiber = ImportModule(moduleName->str, asName->str);
 
@@ -823,10 +883,13 @@ do { \
             {
                 // We have a fiber now let's run it
                 // Just make it be the current fiber we execute 
+                m_CurrentFiber->stack = *stack;
                 m_CurrentFiber = fiber;
+                stack = &m_CurrentFiber->stack;
                 frame->ip = ip;
                 frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
                 ip = frame->ip;
+                constantTable = frame->function->chunk.constants.data();
             }
 
             DISPATCH();
@@ -869,14 +932,16 @@ do { \
                 {
                     // If the caller fiber exists we want to go back to that 
 
+                    m_CurrentFiber->stack = *stack;
                     m_CurrentFiber = m_CurrentFiber->caller;
-
+                    stack = &m_CurrentFiber->stack;
                     // NOTE: This might break
                     PUSH(result);
 
                     frame->ip = ip;
                     frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
                     ip = frame->ip;
+                    constantTable = frame->function->chunk.constants.data();
                     DISPATCH();
                 }
                 else 
@@ -890,6 +955,8 @@ do { \
             frame->ip = ip;
             frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
             ip = frame->ip;
+            constantTable = frame->function->chunk.constants.data();
+            stack = &m_CurrentFiber->stack;
                
             DISPATCH();
         }
@@ -899,9 +966,18 @@ do { \
 
 
         return INTERPRET_ALL_GOOD;
+
+        // Undef everything
 #undef BINARY_OP 
 #undef READ_CONSTANT
 #undef READ_BYTE
+#undef READ_CONSTANT_LONG
+#undef POP
+#undef PUSH
+#undef DISPATCH
+#undef CASE_CODE
+#undef PEEK
+#undef INTERPRET_LOOP
 	}
 
     bool VM::CallValue(Value value, int argCount)
@@ -910,7 +986,26 @@ do { \
         switch(value.GetObjectType())
         {
         case OBJ_FUNCTION:
-            return Call((ObjFunction*)value.ToObject(), argCount);
+        {
+            if (!((ObjFunction*)value.ToObject())->async)
+                return Call((ObjFunction*)value.ToObject(), argCount);
+            else
+            {
+                // The function is an async function
+
+                // Create a new fiber
+                ObjFiber* fiber = CreateFiber((ObjFunction*)value.ToObject());
+
+                // Set the caller to the current fiber
+                fiber->caller = m_CurrentFiber;
+
+                m_CurrentFiber = fiber;
+
+                return true;
+            }
+
+            break;
+        }
         case OBJ_NATIVE: 
         {
             ObjNative* native = (ObjNative*)value.ToObject();

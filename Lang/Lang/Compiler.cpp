@@ -546,6 +546,15 @@ namespace script
 		{
 			FunctionDeclaration();
 		}
+		else if (Match(TK_ASYNC))
+		{
+			if (Match(TK_FUNCTION))
+				FunctionDeclaration(true);
+		}
+		else if (Match(TK_AWAIT))
+		{
+			AwaitStatement();
+		}
 		else if (Match(TK_VAR))
 		{
 			VariableDeclaration(false);
@@ -971,13 +980,13 @@ namespace script
 		EndScope();
 	}
 
-	void Compiler::FunctionDeclaration()
+	void Compiler::FunctionDeclaration(bool async)
 	{
 		size_t global = ParseVariable("Expected Function name");
 
 		MarkInitialised();
 
-		Function(TYPE_FUNCTION);
+		Function(TYPE_FUNCTION, async);
 
 		DefineVariable((uint16_t)global, false);
 	}
@@ -1011,7 +1020,7 @@ namespace script
 		EmitByte(OP_POP);
 	}
 
-	void Compiler::Function(FunctionType type)
+	void Compiler::Function(FunctionType type, bool async)
 	{
 		Compiler compiler;
 		compiler.InitCompiler(this, type);
@@ -1046,6 +1055,7 @@ namespace script
 			compiler.EmitByte(OP_RETURN);
 
 			ObjFunction* func = compiler.EndCompiler();
+			func->async = async;
 
 			EmitConstant(Value(func));
 		}
@@ -1056,6 +1066,7 @@ namespace script
 			compiler.Block();
 
 			ObjFunction* func = compiler.EndCompiler();
+			func->async = async;
 
 			EmitConstant(Value(func));
 		}
@@ -1183,6 +1194,14 @@ namespace script
 		
 		Consume(TK_SEMICOLON, "Expected ';' after import statement.");
 
+	}
+
+	void Compiler::AwaitStatement()
+	{
+		Expression();
+		Consume(TK_SEMICOLON, "Expected ';' after await expression.");
+
+		EmitByte(OP_AWAIT);
 	}
 
 

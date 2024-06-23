@@ -154,6 +154,8 @@ namespace script
 		int arity = 0;
 		ObjString* name;
 
+		bool async = false;
+
 		std::string ToString() override { return "function"; }
 	};
 
@@ -250,6 +252,7 @@ namespace script
 
 		FIBER_ROOT, 
 	};
+
 
 
 

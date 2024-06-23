@@ -113,7 +113,7 @@ namespace script
 		void WhileStatement();
 		void ForStatement();
 		void Call(bool canAssign);
-		void FunctionDeclaration();
+		void FunctionDeclaration(bool async = false);
 		void ReturnStatement();
 		void Array(bool canAssign);
 		void ArrayAccess(bool canAssign);
@@ -123,8 +123,9 @@ namespace script
 		void ImportStatement();
 		void Increment(bool canAssign);
 		void Range(bool canAssign);
+		void AwaitStatement();
 
-		void Function(FunctionType type);
+		void Function(FunctionType type, bool async = false);
 
 		void Method();
 

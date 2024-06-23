@@ -7,13 +7,13 @@
 int main(int argc, char* argv[])
 {
 	  
-	const std::string source =
+	const std::string benchmark =
 R"(
 
 import "std:io";
 import "std:time" as time;
 
-func fib(n) {
+func fib(n) { 
 	if (n < 2) { 
 		return n;
 	}
@@ -21,8 +21,9 @@ func fib(n) {
 	return fib(n - 2) + fib(n - 1); 
 }
 
+
 var total = 0.0;
-var itrs = 10;
+var itrs = 50;
 var fibnth = 24;
 
 for (var i in 0..itrs) {
@@ -46,6 +47,28 @@ println("-------------");
 println("Average: $avg");
 
 )";  
+
+	const std::string source =
+		R"(
+
+import "std:io";
+
+async func doSomething() {
+
+	println("Hello part 1");
+	
+	await 250;
+
+	println("Hello part 2");
+
+}
+
+doSomething();
+
+println("Hello from main");
+
+)";
+
 
 
 	script::ObjFunction* function = script::CompileScript(source);
