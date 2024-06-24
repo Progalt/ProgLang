@@ -136,6 +136,17 @@ namespace script
 
         uint8_t instruction = 0;
 
+#define STORE_FRAME() frame->ip = ip;
+
+#define LOAD_FRAME()                                                                \
+    do {                                                                            \
+        STORE_FRAME();                                                              \
+        frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];           \
+        ip = frame->ip;                                                             \
+        constantTable = frame->function->chunk.constants.data();                    \
+        stack = &m_CurrentFiber->stack;                                             \
+    } while(false)
+
         // Define the stack trace
 //#define DEBUG_STACK_TRACE
 #ifdef DEBUG_STACK_TRACE
@@ -187,11 +198,11 @@ namespace script
 
 
 #define DISPATCH()  \
-do { \
+    do { \
         STACK_TRACE(); \
         eventLoop(); \
         goto *dispatchTable[instruction = READ_BYTE()]; \
-} while (false)
+    } while (false)
 
 #define INTERPRET_LOOP DISPATCH();
 
@@ -653,13 +664,8 @@ do { \
                 return INTERPRET_RUNTIME_ERROR;
             }
 
-            frame->ip = ip;
-            frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
-            ip = frame->ip;
-            constantTable = frame->function->chunk.constants.data();
-            stack = &m_CurrentFiber->stack;
+            LOAD_FRAME();
                
-
             DISPATCH();
         }
         CASE_CODE(CLASS):
@@ -887,14 +893,9 @@ do { \
 
                 m_CurrentFiber->stack = *stack;
                 m_CurrentFiber = m_CurrentFiber->caller;
-                stack = &m_CurrentFiber->stack;
 
 
-
-                frame->ip = ip;
-                frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
-                ip = frame->ip;
-                constantTable = frame->function->chunk.constants.data();
+                LOAD_FRAME();
             }
 
             DISPATCH();
@@ -938,11 +939,8 @@ do { \
                 // Just make it be the current fiber we execute 
                 m_CurrentFiber->stack = *stack;
                 m_CurrentFiber = fiber;
-                stack = &m_CurrentFiber->stack;
-                frame->ip = ip;
-                frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
-                ip = frame->ip;
-                constantTable = frame->function->chunk.constants.data();
+               
+                LOAD_FRAME();
             }
 
             DISPATCH();
@@ -953,6 +951,7 @@ do { \
 
             Value result = POP();
             m_CurrentFiber->framesCount--;
+
             if (m_CurrentFiber->framesCount == 0)
             {
                 POP();
@@ -987,14 +986,9 @@ do { \
 
                     m_CurrentFiber->stack = *stack;
                     m_CurrentFiber = m_CurrentFiber->caller;
-                    stack = &m_CurrentFiber->stack;
-                    // NOTE: This might break
-                    // PUSH(result);
+                    
 
-                    frame->ip = ip;
-                    frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
-                    ip = frame->ip;
-                    constantTable = frame->function->chunk.constants.data();
+                    LOAD_FRAME();
                     DISPATCH();
                 }
                 else
@@ -1019,11 +1013,8 @@ do { \
 
             m_CurrentFiber->stack.m_Top = frame->slots;
             PUSH(result);
-            frame->ip = ip;
-            frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
-            ip = frame->ip;
-            constantTable = frame->function->chunk.constants.data();
-            stack = &m_CurrentFiber->stack;
+            
+            LOAD_FRAME();
                
             DISPATCH();
         }
@@ -1128,11 +1119,7 @@ do { \
                 if (!moduleFunc)
                     result = func(argCount + 1, (m_CurrentFiber->stack.m_Top) - argCount - 1);
                 else 
-                {
-                    
                     result = func(argCount, (m_CurrentFiber->stack.m_Top) - argCount);
-
-                }
 
                 m_CurrentFiber->stack.m_Top -= argCount + 1;
 
@@ -1165,9 +1152,7 @@ do { \
     bool VM::Call(ObjFunction* function, int argCount)
     {
         if (m_CurrentFiber->framesCount == MaxCallFrames)
-        {
             return false;
-        }
 
         CallFrame* frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount++];
         frame->function = function; 
@@ -1220,16 +1205,12 @@ do { \
 
         // TODO: Check if we are sandboxed
 
-        // Check if the module is already loaded
-        // TODO: This check isn't the best.. probably should fix it 
-        //if (m_ExecutingModule == nullptr) 
-        //{
-            if (m_Modules.find(importName) != m_Modules.end())
-            {
-                return nullptr;
-            }
-        //}
-
+        // Check if we have already imported this module
+        if (m_Modules.find(importName) != m_Modules.end())
+        {
+            return nullptr;
+        }
+  
         if (!asName.empty())
         {
             // Create a new module
@@ -1258,9 +1239,7 @@ do { \
 
         if (file.empty())
         {
-            
-            Error("Cannot read file: " + name + ".lang");
-
+            Error("Cannot read file: " + name + ".lang to import as a module");
             return nullptr; 
         }
 

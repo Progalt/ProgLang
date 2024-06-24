@@ -55,17 +55,20 @@ import "std:io";
 
 import "F:\Dev\ProgLang\std\async";
 
-func callback() {
-	println("Timer done");
+async func doSomething() {
+
+	println("A");
+	
+	await 50;
+
+	println("B");
+
 }
 
-var timer = Timer();
-timer.set_duration(100);
-timer.set_callback(callback);
+doSomething();
 
-println("Timer start");
+println("Hello");
 
-timer.start();
 
 )";
 
