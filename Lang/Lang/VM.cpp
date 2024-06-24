@@ -11,6 +11,7 @@
 namespace script
 {
 
+
     VM::VM(const VMCreateInfo& createInfo) : m_CurrentGlobal(&m_GlobalVariables)
     {
         if (!createInfo.ioInterface)
@@ -76,8 +77,35 @@ namespace script
       PUSH(a op b); \
     } while (false)
 
+       auto handleEvent = [&](Event evnt)
+           {
+               switch (evnt.type)
+               {
+               case EVENT_PUSH_FIBER:
+               {
+                   ObjFiber* newFiber = evnt.fiber;
 
+                   newFiber->caller = m_CurrentFiber;
 
+                   m_CurrentFiber = newFiber;
+
+                   frame->ip = ip;
+                   frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
+                   ip = frame->ip;
+                   constantTable = frame->function->chunk.constants.data();
+                   stack = &m_CurrentFiber->stack;
+                   break;
+               }
+              
+               }
+           };
+
+       auto eventLoop = [&]() {
+           eventManager.TranslateMessages();
+
+           while(!eventManager.IsEmpty())
+               handleEvent(eventManager.Pop());
+       };
 
         uint8_t instruction = 0;
 
@@ -106,12 +134,15 @@ namespace script
         // Maybe use an event loop
 #define GARBAGE_COLLECT() \
 do { \
+    eventLoop(); \
     if (memoryManager.shouldCollectGarbage) { \
         CollectGarbage(); \
         memoryManager.shouldCollectGarbage = false; \
         memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR; \
     } \
 } while(false)
+
+
 
         // This references how wren does computed gotos 
         // https://github.com/wren-lang/wren/blob/main/src/vm/wren_vm.c
@@ -141,7 +172,7 @@ do { \
 #define INTERPRET_LOOP  \
 do { \
         STACK_TRACE(); \
-        GARBAGE_COLLECT(); \ 
+        eventLoop(); \ 
         DISPATCH();\
 } while (false); 
 
@@ -152,7 +183,7 @@ do { \
 #define INTERPRET_LOOP  \
         loop:  \
             STACK_TRACE(); \
-            GARBAGE_COLLECT(); \
+            eventLoop(); \
             switch(instruction = READ_BYTE())
 
 #define DISPATCH() goto loop
@@ -830,7 +861,15 @@ do { \
                 // We want to go back to the caller
                 // And setup a callback to notify what to do and to return to this
 
+                Timer::GetInstance().StartTimer((uint64_t)v.ToNumber(), [callee] {
+                    // printf("Timer done");
 
+                    Event evnt{};
+                    evnt.type = EVENT_PUSH_FIBER;
+                    evnt.fiber = callee;
+
+                    eventManager.Push(evnt);
+                });
 
                 m_CurrentFiber->stack = *stack;
                 m_CurrentFiber = m_CurrentFiber->caller;
@@ -944,8 +983,22 @@ do { \
                     constantTable = frame->function->chunk.constants.data();
                     DISPATCH();
                 }
-                else 
+                else
+                {
+                    m_CurrentFiber = nullptr;
+                    while (Timer::GetInstance().GetActiveTimerCount() > 0)
+                    {
+                        // Translate messages from the OS 
+                        eventManager.TranslateMessages();
+
+                        // If we aren't empty on events dispatch and handle them
+                        if (!eventManager.IsEmpty())
+                        {
+                            DISPATCH();
+                        }
+                    }
                     return INTERPRET_ALL_GOOD;
+                }
             }
 
                 

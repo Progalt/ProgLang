@@ -11,6 +11,7 @@ set (SOURCES
     "Lang/VM.cpp"
     "Lang/Libraries/std.cpp"
     "Lang/Libraries/web.cpp"
+    "Lang/EventSystem.cpp"
 )
 
 add_library(ProgLang ${SOURCES})

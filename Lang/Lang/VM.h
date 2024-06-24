@@ -11,6 +11,7 @@
 #include "Stack.h"
 
 #include "Vendor/unordered_dense.h"
+#include "EventSystem.h"
 
 namespace script
 {
