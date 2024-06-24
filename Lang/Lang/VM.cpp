@@ -96,6 +96,29 @@ namespace script
                    stack = &m_CurrentFiber->stack;
                    break;
                }
+               case EVENT_POP_FIBER:
+               {
+                   if (m_CurrentFiber->caller == nullptr)
+                       break;
+                   
+                   m_CurrentFiber = m_CurrentFiber->caller;
+
+                   frame->ip = ip;
+                   frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
+                   ip = frame->ip;
+                   constantTable = frame->function->chunk.constants.data();
+                   stack = &m_CurrentFiber->stack;
+
+                   break;
+               }
+               case EVENT_TRIGGER_GC:
+               {
+
+                   CollectGarbage(); 
+                   memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR; 
+                   
+                   break;
+               }
               
                }
            };
@@ -128,20 +151,6 @@ namespace script
 #else 
 #define STACK_TRACE()
 #endif
-
-        // Garbage collect
-        // TODO: Improve garbage collection
-        // Maybe use an event loop
-#define GARBAGE_COLLECT() \
-do { \
-    eventLoop(); \
-    if (memoryManager.shouldCollectGarbage) { \
-        CollectGarbage(); \
-        memoryManager.shouldCollectGarbage = false; \
-        memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR; \
-    } \
-} while(false)
-
 
 
         // This references how wren does computed gotos 
