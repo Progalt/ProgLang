@@ -16,7 +16,6 @@ namespace script
 			if (memoryManager.m_BytesAllocated > memoryManager.m_NextGC)
 			{
 				eventManager.Push({ EVENT_TRIGGER_GC });
-				memoryManager.shouldCollectGarbage = true;
 			}
 		}
 

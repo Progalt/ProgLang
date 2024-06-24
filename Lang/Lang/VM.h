@@ -76,6 +76,9 @@ namespace script
 		ObjFiber* caller = nullptr;
 
 		FiberState state = FIBER_UNKNOWN;
+
+		// This is true if the fiber is waiting on another function to finish exection before it can finish 
+		bool awaiting = false;
 	};
 
 	inline ObjFiber* CreateFiber(ObjFunction* func)

@@ -1,0 +1,34 @@
+
+import "std:time" as time;
+import "std:os" as os;
+
+-- Asynchronous timer class
+-- Calls a callback once its finished
+class Timer {
+	
+	construct() {
+		self.duration = nil;
+		self.callback = nil;
+	}
+
+	-- Sets the callback to be used
+	-- Cannot be set once started
+	func set_callback(callback) {
+		self.callback = callback;
+	}
+
+	-- Sets the duration of the timer
+	-- Cannot be set once started 
+	func set_duration(duration) {
+		self.duration = duration;
+	}
+
+	-- Starts the timer
+	func start() {
+		
+		-- Queue a timer with the OS
+		os.queue_timer(self.duration, self.callback);
+
+	}
+	
+}

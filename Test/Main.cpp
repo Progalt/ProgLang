@@ -53,21 +53,19 @@ println("Average: $avg");
 
 import "std:io";
 
+import "F:\Dev\ProgLang\std\async";
 
-async func doSomething() {
-
-	println("Hello part 1");
-	
-	await 2;
-
-	println("Hello part 2");
-
-
+func callback() {
+	println("Timer done");
 }
 
-doSomething();
+var timer = Timer();
+timer.set_duration(100);
+timer.set_callback(callback);
 
-println("Hello from main");
+println("Timer start");
+
+timer.start();
 
 )";
 

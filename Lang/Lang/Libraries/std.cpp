@@ -11,6 +11,8 @@
 
 #include <chrono>
 
+#include "../EventSystem.h"
+
 namespace script
 {
 
@@ -279,5 +281,36 @@ namespace script
         }
 
         mdl->AddNativeFunction("now", nowFunc, 0);
+    }
+
+    auto osQueueTimer = [](int argc, Value* args) {
+
+        double duration = args[0].ToNumber();
+        ObjFunction* callback = (ObjFunction*)args[1].ToObject();
+
+        Timer::GetInstance().StartTimer((uint64_t)duration, [callback]() {
+
+            // Create a fiber
+            ObjFiber* fiber = CreateFiber(callback);
+
+            Event evnt{};
+            evnt.type = EVENT_PUSH_FIBER;
+            evnt.fiber = fiber;
+
+            eventManager.Push(evnt);
+
+        });
+
+        return Value();
+    };
+
+    void LoadStdOs(VM* vm, ObjModule* mdl)
+    {
+        if (mdl == nullptr)
+        {
+            vm->AddNativeFunction("queue_timer", osQueueTimer, 2);
+        }
+
+        mdl->AddNativeFunction("queue_timer", osQueueTimer, 2);
     }
 }

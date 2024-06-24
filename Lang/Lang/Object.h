@@ -251,6 +251,9 @@ namespace script
 		FIBER_UNKNOWN,
 
 		FIBER_ROOT, 
+
+		// Being run as an async function
+		FIBER_ASYNC,
 	};
 
 

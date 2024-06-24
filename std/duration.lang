@@ -1,0 +1,14 @@
+
+
+-- represents a duration of time
+class Duration {
+	
+	construct() {
+	
+	}
+
+	func as_milliseconds() {
+		
+	}
+
+}

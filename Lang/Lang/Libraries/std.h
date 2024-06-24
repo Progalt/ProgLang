@@ -20,4 +20,6 @@ namespace script
 
     // Always loaded 
     void LoadStdPrimitives(VM* vm);
+
+    void LoadStdOs(VM* vm, ObjModule* mdl);
 }

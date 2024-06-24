@@ -77,6 +77,10 @@ namespace script
       PUSH(a op b); \
     } while (false)
 
+       // Event loop
+       // We handle events here... obviously
+       // This gets called if the event loop has an event
+       // TODO: this stuff could probably be extracted out of here to somewhere else 
        auto handleEvent = [&](Event evnt)
            {
                switch (evnt.type)
@@ -113,7 +117,7 @@ namespace script
                }
                case EVENT_TRIGGER_GC:
                {
-
+                   // Pretty simple just trigger a garbage collection 
                    CollectGarbage(); 
                    memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR; 
                    
@@ -557,8 +561,6 @@ do { \
         CASE_CODE(GET_GLOBAL):
         {
 
-            // uint16_t constant = READ_SHORT();
-
             ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
 
             {
@@ -578,8 +580,6 @@ do { \
         } 
         CASE_CODE(SET_GLOBAL):
         {
-            // uint16_t constant = READ_SHORT();
-
             ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
 
             {
@@ -836,7 +836,6 @@ do { \
                 if (idx >= arr->size)
                     ip += jumpOffset;
 
-                //*iterator = Value((double)(idx + 1));
                 *value = arr->values[idx];
                 iterator->MakeNumber((double)(idx + 1));
                 break;
@@ -1185,7 +1184,7 @@ do { \
         std::string importName = asName.empty() ? name : asName;
 
         // Default modules 
-        if (name == "std:io" || name == "std:maths" || name == "std:filesystem" || name == "std:json" || name == "std:time")
+        if (name == "std:io" || name == "std:maths" || name == "std:filesystem" || name == "std:json" || name == "std:time" || name == "std:os")
         {
             if (!asName.empty())
             {
@@ -1215,6 +1214,8 @@ do { \
                     LoadStdTime(this, mdl);
                 else if (name == "std:json")
                     LoadJsonModule(this, mdl);
+                else if (name == "std:os")
+                    LoadStdOs(this, mdl);
 
                 // Load it into the current global
                 m_CurrentGlobal->operator[](asName) = Value(mdl);
@@ -1231,6 +1232,8 @@ do { \
                 LoadStdTime(this, nullptr);
             else if (name == "std:json")
                 LoadJsonModule(this, nullptr);
+            else if (name == "std:os")
+                LoadStdOs(this, nullptr);
 
 
             return nullptr;
