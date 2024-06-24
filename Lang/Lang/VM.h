@@ -13,8 +13,24 @@
 #include "Vendor/unordered_dense.h"
 #include "EventSystem.h"
 
+#include "Libraries/std.h"
+
 namespace script
 {
+
+	// This is to streamline the loading process of modules
+
+	typedef void(*NativeModuleLoadFunc)(VM*, ObjModule*);
+
+	static std::map<std::string, NativeModuleLoadFunc> ModuleLoaders = {
+		{ "std:io", LoadStdIO },
+		{ "std:filesystem", LoadStdFilesystem },
+		{ "std:maths", LoadStdMaths },
+		{ "std:json", LoadJsonModule },
+		{ "std:time", LoadStdTime }, 
+		{ "std:os", LoadStdOs }
+	};
+
 	// Yes this shouldn't be here but I get compiler errors due to value otherwise
 	// So yeah....
 	// TODO: FIX

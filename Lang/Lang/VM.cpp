@@ -1180,61 +1180,40 @@ do { \
 
     ObjFiber* VM::ImportModule(const std::string& name, const std::string& asName)
     {
+
        
         std::string importName = asName.empty() ? name : asName;
 
-        // Default modules 
-        if (name == "std:io" || name == "std:maths" || name == "std:filesystem" || name == "std:json" || name == "std:time" || name == "std:os")
+
+        auto it = ModuleLoaders.find(name);
+        if (it != ModuleLoaders.end())
         {
+            // Found as a module that can be loaded
+
+            ObjModule* mdl = nullptr;
             if (!asName.empty())
             {
-                auto it = m_Modules.find(asName);
+                // It needs to be loaded into a module and not global
 
-                ObjModule* mdl = nullptr;
-                if (it != m_Modules.end())
-                {
-                    mdl = (ObjModule*)it->second.ToObject();
-                }
-                else 
+                // First need to check if the module already exists
+                // If it does load into that.
+
+                auto loadedMdl = m_Modules.find(asName);
+
+                if (loadedMdl != m_Modules.end())
+                    mdl = (ObjModule*)loadedMdl->second.ToObject();
+                else
                 {
                     mdl = CreateModule(memoryManager.AllocateString(asName));
-
                     m_Modules[asName] = mdl;
-
-                   
                 }
-
-                if (name == "std:io")
-                    LoadStdIO(this, mdl);
-                else if (name == "std:maths")
-                    LoadStdMaths(this, mdl);
-                else if (name == "std:filesystem")
-                    LoadStdFilesystem(this, mdl);
-                else if (name == "std:time")
-                    LoadStdTime(this, mdl);
-                else if (name == "std:json")
-                    LoadJsonModule(this, mdl);
-                else if (name == "std:os")
-                    LoadStdOs(this, mdl);
-
-                // Load it into the current global
-                m_CurrentGlobal->operator[](asName) = Value(mdl);
-                return nullptr;
             }
 
-            if (name == "std:io")
-                LoadStdIO(this, nullptr);
-            else if (name == "std:maths")
-                LoadStdMaths(this, nullptr);
-            else if (name == "std:filesystem")
-                LoadStdFilesystem(this, nullptr);
-            else if (name == "std:time")
-                LoadStdTime(this, nullptr);
-            else if (name == "std:json")
-                LoadJsonModule(this, nullptr);
-            else if (name == "std:os")
-                LoadStdOs(this, nullptr);
+            it->second(this, mdl);
 
+            // Make sure to add the new module to global
+            if (mdl != nullptr)
+                m_CurrentGlobal->operator[](asName) = mdl;
 
             return nullptr;
         }

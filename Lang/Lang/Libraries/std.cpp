@@ -278,6 +278,7 @@ namespace script
         if (mdl == nullptr)
         {
             vm->AddNativeFunction("now", nowFunc, 0);
+            return;
         }
 
         mdl->AddNativeFunction("now", nowFunc, 0);
@@ -309,6 +310,8 @@ namespace script
         if (mdl == nullptr)
         {
             vm->AddNativeFunction("queue_timer", osQueueTimer, 2);
+
+            return;
         }
 
         mdl->AddNativeFunction("queue_timer", osQueueTimer, 2);
