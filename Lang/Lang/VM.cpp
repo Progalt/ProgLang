@@ -98,7 +98,7 @@ namespace script
                }
                case EVENT_POP_FIBER:
                {
-                   if (m_CurrentFiber->caller == nullptr)
+                   if (m_CurrentFiber == nullptr || m_CurrentFiber->caller == nullptr)
                        break;
                    
                    m_CurrentFiber = m_CurrentFiber->caller;
@@ -133,8 +133,13 @@ namespace script
         uint8_t instruction = 0;
 
         // Define the stack trace
+//#define DEBUG_STACK_TRACE
 #ifdef DEBUG_STACK_TRACE
         auto stackTrace = [&]() {
+
+            if (m_CurrentFiber == nullptr)
+                return;
+
             printf("          ");
             for (Value* slot = m_CurrentFiber->stack.m_Stack; slot < m_CurrentFiber->stack.m_Top; slot++) {
                 printf("[ ");
@@ -176,14 +181,15 @@ namespace script
 
 #define CASE_CODE(name) code_##name
 
-#define DISPATCH() goto *dispatchTable[instruction = READ_BYTE()]
 
-#define INTERPRET_LOOP  \
+#define DISPATCH()  \
 do { \
         STACK_TRACE(); \
-        eventLoop(); \ 
-        DISPATCH();\
-} while (false); 
+        eventLoop(); \
+        goto *dispatchTable[instruction = READ_BYTE()]; \
+} while (false)
+
+#define INTERPRET_LOOP DISPATCH();
 
 #else
 
@@ -984,7 +990,7 @@ do { \
                     m_CurrentFiber = m_CurrentFiber->caller;
                     stack = &m_CurrentFiber->stack;
                     // NOTE: This might break
-                    PUSH(result);
+                    // PUSH(result);
 
                     frame->ip = ip;
                     frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];

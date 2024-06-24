@@ -53,25 +53,21 @@ println("Average: $avg");
 
 import "std:io";
 
-var loop = true;
 
 async func doSomething() {
 
 	println("Hello part 1");
 	
-	await 5;
+	await 2;
 
 	println("Hello part 2");
 
-	loop = false;
 
 }
 
 doSomething();
 
-while (loop) {
-	println("Hello from main");
-}
+println("Hello from main");
 
 )";
 
