@@ -276,14 +276,6 @@ namespace script
 
 				}
 
-				// Other objects have custom hash functions typically defined by the user or through language code
-
-				auto hashingMethod = obj->methods.find("hash");
-
-				if (hashingMethod != obj->methods.end())
-				{
-					// We have a hashing method
-				}
 
 			}
 			else if (IsNumber())

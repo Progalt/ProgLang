@@ -546,11 +546,6 @@ namespace script
 		{
 			FunctionDeclaration();
 		}
-		else if (Match(TK_ASYNC))
-		{
-			if (Match(TK_FUNCTION))
-				FunctionDeclaration(true);
-		}
 		else if (Match(TK_AWAIT))
 		{
 			AwaitStatement();
@@ -1198,17 +1193,19 @@ namespace script
 
 	void Compiler::AwaitStatement()
 	{
-		Expression();
-		Consume(TK_SEMICOLON, "Expected ';' after await expression.");
-
-		EmitByte(OP_AWAIT);
 	}
 
 
 	void Compiler::Call(bool canAssign)
 	{
 		uint8_t argCount = ArgumentList();
-		EmitBytes(OP_CALL, argCount);
+
+		if (argCount > 16)
+		{
+			ErrorAt(parser.current, "Too many arguments in function call. Max 16 arguments.");
+		}
+
+		EmitByte(OP_CALL_0 + argCount);
 	}
 
 	uint8_t Compiler::ArgumentList()

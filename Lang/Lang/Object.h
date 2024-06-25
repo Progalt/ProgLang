@@ -51,8 +51,6 @@ namespace script
 
 		virtual std::string ToString() { return "nil"; }
 
-		// Any object can contain methods
-		ankerl::unordered_dense::map<std::string, Value> methods; 
 
 		bool isMarked = false;
 
@@ -189,6 +187,7 @@ namespace script
 	public:
 
 		ObjString* name;
+		ankerl::unordered_dense::map<std::string, Value> methods;
 
 		std::string ToString() override { return std::string(name->str); }
 
@@ -221,6 +220,8 @@ namespace script
 		ObjString* name;
 
 		ObjModule* caller = nullptr;
+
+		ankerl::unordered_dense::map<std::string, Value> methods;
 
 		void AddNativeFunction(const std::string& name, NativeFunc func, int arity);
 	};

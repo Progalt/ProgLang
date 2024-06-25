@@ -79,14 +79,14 @@ namespace script
 		
 		
 
-		arr->methods["length"] = Value(NewNativeFunction([=](int argCount, script::Value* args) {
-			
-			// our first argument should be the self value
+		//arr->methods["length"] = Value(NewNativeFunction([=](int argCount, script::Value* args) {
+		//	
+		//	// our first argument should be the self value
 
-			ObjArray* arrObj = (ObjArray*)args[0].ToObject();
+		//	ObjArray* arrObj = (ObjArray*)args[0].ToObject();
 
-			return Value((double)arrObj->size);
-		}, 0));
+		//	return Value((double)arrObj->size);
+		//}, 0));
 
 		// TODO: These
 		/*arr->methods["remove"] = Value(NewNativeFunction([=](int argCount, script::Value* args) {
@@ -112,7 +112,8 @@ namespace script
 			
 		}, 0));
 
-		*/arr->methods["append"] = Value(NewNativeFunction([=](int argCount, script::Value* args) {
+		*/
+		/*arr->methods["append"] = Value(NewNativeFunction([=](int argCount, script::Value* args) {
 
 			assert(argCount == 2);
 
@@ -122,7 +123,7 @@ namespace script
 
 			return Value();
 
-			}, 0));
+			}, 0));*/
 
 		
 		return arr;
@@ -163,7 +164,7 @@ namespace script
 		range->to = 0.0;
 		range->step = 1.0;
 
-		range->methods["unpack"] = Value(NewNativeFunction([&](int argc, Value* args) {
+		/*range->methods["unpack"] = Value(NewNativeFunction([&](int argc, Value* args) {
 			ObjRange* range = (ObjRange*)args[0].ToObject();
 
 			double diff = range->to - range->from;
@@ -181,7 +182,7 @@ namespace script
 			ObjArray* arr = AllocateArray(vec);
 
 			return Value(arr);
-		}, 0));
+		}, 0));*/
 			
 		return range;
 	}
@@ -191,29 +192,29 @@ namespace script
 		ObjDictionary* dict = memoryManager.AllocateObject<ObjDictionary>();
 		dict->type = OBJ_DICTIONARY;
 
-		dict->methods["put"] = Value(NewNativeFunction([&](int argCount, Value* args) {
+		//dict->methods["put"] = Value(NewNativeFunction([&](int argCount, Value* args) {
 
-			// Get self
-			ObjDictionary* d = (ObjDictionary*)args[0].ToObject();
+		//	// Get self
+		//	ObjDictionary* d = (ObjDictionary*)args[0].ToObject();
 
-			d->map[args[1].Hash()] = args[2];
+		//	d->map[args[1].Hash()] = args[2];
 
-			return Value();
-		}, 2));
+		//	return Value();
+		//}, 2));
 
-		dict->methods["get"] = Value(NewNativeFunction([&](int argCount, Value* args) {
+		//dict->methods["get"] = Value(NewNativeFunction([&](int argCount, Value* args) {
 
-			// Get self
-			ObjDictionary* d = (ObjDictionary*)args[0].ToObject();
+		//	// Get self
+		//	ObjDictionary* d = (ObjDictionary*)args[0].ToObject();
 
-			auto it = d->map.find(args[1].Hash());
-			if (it != d->map.end())
-			{
-				return it->second;
-			}
+		//	auto it = d->map.find(args[1].Hash());
+		//	if (it != d->map.end())
+		//	{
+		//		return it->second;
+		//	}
 
-			return Value();
-			}, 2));
+		//	return Value();
+		//	}, 2));
 
 		return dict;
 	}
@@ -244,7 +245,7 @@ namespace script
 
 		instance->type = OBJ_INSTANCE;
 		instance->klass = klass;
-		instance->methods = klass->methods;
+		// instance->methods = klass->methods;
 
 		return instance;
 	}

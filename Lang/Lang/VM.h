@@ -254,6 +254,43 @@ namespace script
 		size_t m_GreyStackOffset = 0;
 		std::vector<Object*> m_GreyStack;
 
+		// These are object classes
+
+		ObjClass* m_NumericClass;
+		ObjClass* m_StringClass;
+		ObjClass* m_BoolClass;
+		ObjClass* m_ListClass;
+		ObjClass* m_RangeClass;
+		ObjClass* m_DictionaryClass;
+
+
+		inline ObjClass* GetClassInline(Value v)
+		{
+
+
+			if (v.IsNumber())
+				return m_NumericClass;
+
+			if (v.IsBool())
+				return m_BoolClass;
+
+			if (v.IsObject())
+			{
+				switch (v.GetObjectType())
+				{
+				case OBJ_CLASS:
+					return (ObjClass*)v.ToObject();
+				case OBJ_INSTANCE:
+					return ((ObjInstance*)v.ToObject())->klass;
+				default:
+					return nullptr;
+					break;
+				}
+			}
+
+			return nullptr;
+
+		}
 		
 	};
 }

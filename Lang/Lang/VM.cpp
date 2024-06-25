@@ -52,8 +52,6 @@ namespace script
         // With how frequent this gets access its important
         uint8_t* ip = frame->ip;
 
-        Stack* stack = &m_CurrentFiber->stack;
-
         // Does this have any benefit? 
        Value* constantTable = frame->function->chunk.constants.data();
 
@@ -66,9 +64,9 @@ namespace script
 #define READ_CONSTANT_LONG() (constantTable[READ_SHORT()])
 
         // Stack functions
-#define PUSH(val) (*(stack->m_Top++) = (val))
-#define POP() (*(--stack->m_Top))
-#define PEEK(off) (stack->m_Top[-1 - off])
+#define PUSH(val) (*(m_CurrentFiber->stack.m_Top++) = (val))
+#define POP() (*(--(m_CurrentFiber->stack.m_Top)))
+#define PEEK(off) (m_CurrentFiber->stack.m_Top[-1 - off])
 
 #define BINARY_OP(op) \
     do { \
@@ -77,12 +75,25 @@ namespace script
       PUSH(a op b); \
     } while (false)
 
+#define STORE_FRAME() frame->ip = ip;
+
+#define LOAD_FRAME()                                                                \
+    do {                                                                            \
+        STORE_FRAME();                                                              \
+        frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];           \
+        ip = frame->ip;                                                             \
+        constantTable = frame->function->chunk.constants.data();                    \
+    } while(false)
+
        // Event loop
-       // We handle events here... obviously
        // This gets called if the event loop has an event
        // TODO: this stuff could probably be extracted out of here to somewhere else 
-       auto handleEvent = [&](Event evnt)
+       auto eventLoop = [&]() {
+
+           while (!eventManager.IsEmpty())
            {
+               Event evnt = eventManager.Pop();
+
                switch (evnt.type)
                {
                case EVENT_PUSH_FIBER:
@@ -93,59 +104,34 @@ namespace script
 
                    m_CurrentFiber = newFiber;
 
-                   frame->ip = ip;
-                   frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
-                   ip = frame->ip;
-                   constantTable = frame->function->chunk.constants.data();
-                   stack = &m_CurrentFiber->stack;
+                   LOAD_FRAME();
                    break;
                }
                case EVENT_POP_FIBER:
                {
                    if (m_CurrentFiber == nullptr || m_CurrentFiber->caller == nullptr)
                        break;
-                   
+
                    m_CurrentFiber = m_CurrentFiber->caller;
 
-                   frame->ip = ip;
-                   frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
-                   ip = frame->ip;
-                   constantTable = frame->function->chunk.constants.data();
-                   stack = &m_CurrentFiber->stack;
-
+                   LOAD_FRAME();
                    break;
                }
                case EVENT_TRIGGER_GC:
                {
                    // Pretty simple just trigger a garbage collection 
-                   CollectGarbage(); 
-                   memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR; 
-                   
+                   CollectGarbage();
+                   memoryManager.m_NextGC = memoryManager.m_BytesAllocated * GC_HEAP_GROW_FACTOR;
+
                    break;
                }
-              
+
                }
-           };
-
-       auto eventLoop = [&]() {
-           eventManager.TranslateMessages();
-
-           while(!eventManager.IsEmpty())
-               handleEvent(eventManager.Pop());
+           }
        };
 
         uint8_t instruction = 0;
 
-#define STORE_FRAME() frame->ip = ip;
-
-#define LOAD_FRAME()                                                                \
-    do {                                                                            \
-        STORE_FRAME();                                                              \
-        frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];           \
-        ip = frame->ip;                                                             \
-        constantTable = frame->function->chunk.constants.data();                    \
-        stack = &m_CurrentFiber->stack;                                             \
-    } while(false)
 
         // Define the stack trace
 //#define DEBUG_STACK_TRACE
@@ -655,18 +641,145 @@ namespace script
 
             DISPATCH();
         }
-        CASE_CODE(CALL):
+        CASE_CODE(CALL_0):
+        CASE_CODE(CALL_1):
+        CASE_CODE(CALL_2):
+        CASE_CODE(CALL_3):
+        CASE_CODE(CALL_4):
+        CASE_CODE(CALL_5):
+        CASE_CODE(CALL_6):
+        CASE_CODE(CALL_7):
+        CASE_CODE(CALL_8):
+        CASE_CODE(CALL_9):
+        CASE_CODE(CALL_10):
+        CASE_CODE(CALL_11):
+        CASE_CODE(CALL_12):
+        CASE_CODE(CALL_13):
+        CASE_CODE(CALL_14):
+        CASE_CODE(CALL_15):
+        CASE_CODE(CALL_16):
         {
-            int argCount = READ_BYTE();
-            if (!CallValue(PEEK(argCount), argCount))
+            int argCount = instruction - OP_CALL_0;
+
+            Value obj = *(m_CurrentFiber->stack.m_Top - argCount - 1);
+
+            goto completeCall;
+
+
+            
+
+        completeCall:
+
+
+
+            switch (obj.GetObjectType())
             {
-                Error("Could not call function");
-                return INTERPRET_RUNTIME_ERROR;
+            case OBJ_FUNCTION:
+            {
+                if (!Call((ObjFunction*)obj.ToObject(), argCount))
+                {
+                    Error("Could not call function");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                LOAD_FRAME();
+
+                break;
+            }
+                
+            case OBJ_NATIVE:
+            {
+                ObjNative* native = (ObjNative*)obj.ToObject();
+                NativeFunc func = native->function;
+
+                Value result = func(argCount, m_CurrentFiber->stack.m_Top - argCount);
+
+                m_CurrentFiber->stack.m_Top -= argCount + 1;
+
+                m_CurrentFiber->stack.Push(result);
+
+                LOAD_FRAME();
+                break;
+            }
+            case OBJ_CLASS:
+            {
+                ObjClass* klass = (ObjClass*)obj.ToObject();
+                m_CurrentFiber->stack.m_Top[-argCount - 1] = Value(NewInstance(klass));
+
+                auto it = klass->methods.find("construct");
+
+                if (it != klass->methods.end())
+                {
+                    if (!Call((ObjFunction*)it->second.ToObject(), argCount))
+                    {
+                        Error("Failed to call class constructor");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+                
+                }
+                else if (argCount != 0)
+                {
+                    Error("Expected 0 arguments in class constructor but got " + std::to_string(argCount));
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                LOAD_FRAME();
+                break;
+            }
+            case OBJ_BOUND_METHOD:
+            {
+                ObjBoundMethod* bound = (ObjBoundMethod*)obj.ToObject();
+
+                m_CurrentFiber->stack.m_Top[-argCount - 1] = bound->reciever;
+                if (bound->isNative)
+                {
+                    ObjNative* native = bound->native;
+                    NativeFunc func = native->function;
+
+                    // For native functions we need to do something a bit more
+                    // Native functions here always have an argument. self 
+
+                    if (argCount != native->arity)
+                    {
+                        // Arg counts do not match
+                    }
+
+                    bool moduleFunc = ((m_CurrentFiber->stack.m_Top) - argCount - 1)->IsObjType(OBJ_MODULE);
+
+                    int totalArgCount = argCount + (int)moduleFunc;
+
+                    Value result;
+                    result = func(totalArgCount, (m_CurrentFiber->stack.m_Top) - totalArgCount);
+
+
+                    m_CurrentFiber->stack.m_Top -= argCount + 1;
+
+                    m_CurrentFiber->stack.Push(result);
+
+                    LOAD_FRAME();
+                }
+                else
+                {
+                    if (!Call(bound->function, argCount))
+                    {
+                        Error("Failed to call bound instance method");
+                        return INTERPRET_RUNTIME_ERROR;
+                    }
+
+                    LOAD_FRAME();
+
+                }
+                break;
             }
 
-            LOAD_FRAME();
-               
+            default:
+                Error("Unknown object cannot be called.");
+                return INTERPRET_RUNTIME_ERROR;
+                break;
+            }
+
             DISPATCH();
+
         }
         CASE_CODE(CLASS):
         {
@@ -691,36 +804,45 @@ namespace script
             // Its quite slow 
             {
                 Value stackObj = PEEK(0);
-                Object* obj = (Object*)stackObj.ToObject();
-                auto it = obj->methods.find(name->str);
-                if (it != obj->methods.end())
+
+                if (stackObj.IsObjType(OBJ_MODULE))
                 {
-                    // Check if its a class or module
-                    // We just push these onto the stack instead of binding to methods
-                    if (it->second.IsObjType(OBJ_CLASS) || stackObj.IsObjType(OBJ_MODULE))
+                    ObjModule* mdl = (ObjModule*)stackObj.ToObject();
+
+                    auto it = mdl->methods.find(name->str);
+                    if (it != mdl->methods.end())
                     {
                         POP();
                         PUSH(it->second);
+
+                        DISPATCH();
                     }
                     else
                     {
-                        ObjBoundMethod* bound = nullptr;
-
-                        if (it->second.IsObjType(OBJ_FUNCTION))
-                            bound = NewBoundMethod(stackObj, (ObjFunction*)it->second.ToObject());
-                        else
-                            bound = NewNativeBoundMethod(stackObj, (ObjNative*)it->second.ToObject());
-
-                        POP();
-                        PUSH(Value(bound));
+                        Error("Module doesn't contain function.");
+                        return INTERPRET_RUNTIME_ERROR;
                     }
+                }
 
+                ObjClass* classObj = GetClassInline(stackObj);
+                auto it = classObj->methods.find(name->str);
+                if (it != classObj->methods.end())
+                {
+                    ObjBoundMethod* bound = nullptr;
+
+                    if (it->second.IsObjType(OBJ_FUNCTION))
+                        bound = NewBoundMethod(stackObj, (ObjFunction*)it->second.ToObject());
+                    else
+                        bound = NewNativeBoundMethod(stackObj, (ObjNative*)it->second.ToObject());
+
+                    POP();
+                    PUSH(Value(bound));
                 }
                 else
                 {
 
                     // Only instances can have fields
-                    ObjInstance* instance = (ObjInstance*)obj;
+                    ObjInstance* instance = (ObjInstance*)stackObj.ToObject();
 
 
                     auto itfield = instance->fields.find(name->str);
@@ -820,9 +942,9 @@ namespace script
         {
             // Iteration using in
 
-            Value* value = stack->m_Top - 3;
-            Value seq = *(stack->m_Top - 2);
-            Value* iterator = stack->m_Top - 1;
+            Value* value = m_CurrentFiber->stack.m_Top - 3;
+            Value seq = *(m_CurrentFiber->stack.m_Top - 2);
+            Value* iterator = m_CurrentFiber->stack.m_Top - 1;
 
             uint16_t jumpOffset = READ_SHORT();
 
@@ -869,37 +991,6 @@ namespace script
 
             DISPATCH();
         }
-        CASE_CODE(AWAIT):
-        {
-            
-            Value v = POP();
-
-            if (m_CurrentFiber->caller != nullptr)
-            {
-                ObjFiber* callee = m_CurrentFiber;
-
-                // We want to go back to the caller
-                // And setup a callback to notify what to do and to return to this
-
-                Timer::GetInstance().StartTimer((uint64_t)v.ToNumber(), [callee] {
-                    // printf("Timer done");
-
-                    Event evnt{};
-                    evnt.type = EVENT_PUSH_FIBER;
-                    evnt.fiber = callee;
-
-                    eventManager.Push(evnt);
-                });
-
-                m_CurrentFiber->stack = *stack;
-                m_CurrentFiber = m_CurrentFiber->caller;
-
-
-                LOAD_FRAME();
-            }
-
-            DISPATCH();
-        }
         CASE_CODE(IMPORT_MODULE):
         {
             // uint16_t moduleNameConstant = READ_SHORT();
@@ -912,9 +1003,7 @@ namespace script
             {
                 // We have a fiber now let's run it
                 // Just make it be the current fiber we execute 
-                m_CurrentFiber->stack = *stack;
                 m_CurrentFiber = fiber;
-                stack = &m_CurrentFiber->stack;
                 frame->ip = ip;
                 frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];
                 ip = frame->ip;
@@ -937,7 +1026,6 @@ namespace script
             {
                 // We have a fiber now let's run it
                 // Just make it be the current fiber we execute 
-                m_CurrentFiber->stack = *stack;
                 m_CurrentFiber = fiber;
                
                 LOAD_FRAME();
@@ -984,7 +1072,6 @@ namespace script
                 {
                     // If the caller fiber exists we want to go back to that 
 
-                    m_CurrentFiber->stack = *stack;
                     m_CurrentFiber = m_CurrentFiber->caller;
                     
 
@@ -994,17 +1081,7 @@ namespace script
                 else
                 {
                     m_CurrentFiber = nullptr;
-                    while (Timer::GetInstance().GetActiveTimerCount() > 0)
-                    {
-                        // Translate messages from the OS 
-                        eventManager.TranslateMessages();
-
-                        // If we aren't empty on events dispatch and handle them
-                        if (!eventManager.IsEmpty())
-                        {
-                            DISPATCH();
-                        }
-                    }
+                    
                     return INTERPRET_ALL_GOOD;
                 }
             }
@@ -1384,7 +1461,7 @@ namespace script
 #endif
 
         // All objects can contain methods
-        MarkTable(obj->methods);
+        //MarkTable(obj->methods);
 
         switch (obj->type)
         {
@@ -1406,6 +1483,7 @@ namespace script
 
             ObjClass* instance = (ObjClass*)obj;
             MarkObject(instance->name);
+            MarkTable(instance->methods);
 
             break;
         }
@@ -1416,7 +1494,7 @@ namespace script
             MarkObject(instance->klass);
 
             MarkTable(instance->fields);
-            MarkTable(instance->methods);
+            
             break;
         }
         case OBJ_BOUND_METHOD:

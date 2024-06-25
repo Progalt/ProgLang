@@ -187,8 +187,8 @@ namespace script
 			case OP_LOOP:
 				byteInstructionLong("OP_LOOP");
 				break;
-			case OP_CALL:
-				byteInstruction("OP_CALL");
+			case OP_CALL_0:
+				byteInstruction("OP_CALL_0");
 				break;
 			case OP_POWER:
 				simpleInstruction("OP_POWER");
@@ -363,8 +363,8 @@ namespace script
 		case OP_LOOP:
 			byteInstructionLong("OP_LOOP");
 			break;
-		case OP_CALL:
-			byteInstruction("OP_CALL");
+		case OP_CALL_0:
+			byteInstruction("OP_CALL_)");
 			break;
 		case OP_POWER:
 			simpleInstruction("OP_POWER");

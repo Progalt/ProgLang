@@ -23,7 +23,7 @@ func fib(n) {
 
 
 var total = 0.0;
-var itrs = 50;
+var itrs = 10;
 var fibnth = 24;
 
 for (var i in 0..itrs) {
@@ -51,24 +51,30 @@ println("Average: $avg");
 	const std::string source =
 		R"(
 
-import "std:io";
+import "std:io" as std;
 
 import "F:\Dev\ProgLang\std\async";
 
-async func doSomething() {
+var num = 54.0;
 
-	println("A");
-	
-	await 50;
+std.println(num);
 
-	println("B");
+class HelloClass {
 
+	construct() {
+		self.t = 100;
+	}
+
+	func print() {
+		std.println(self.t);
+	}
 }
 
-doSomething();
+var test = HelloClass();
 
-println("Hello");
+std.println(test.t);
 
+test.print();
 
 )";
 
