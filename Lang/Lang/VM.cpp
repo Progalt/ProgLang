@@ -54,6 +54,7 @@ namespace script
 
         // Does this have any benefit? 
        Value* constantTable = frame->function->chunk.constants.data();
+       Value* stackStart = frame->slots;
 
         // Welcome to define hell
 
@@ -83,6 +84,7 @@ namespace script
         frame = &m_CurrentFiber->frames[m_CurrentFiber->framesCount - 1];           \
         ip = frame->ip;                                                             \
         constantTable = frame->function->chunk.constants.data();                    \
+        stackStart = frame->slots;                                                  \
     } while(false)
 
        // Event loop
@@ -186,7 +188,8 @@ namespace script
 #define DISPATCH()  \
     do { \
         STACK_TRACE(); \
-        eventLoop(); \
+        if (eventManager.size != 0) \
+            eventLoop(); \
         goto *dispatchTable[instruction = READ_BYTE()]; \
     } while (false)
 
@@ -199,7 +202,8 @@ namespace script
 #define INTERPRET_LOOP  \
         loop:  \
             STACK_TRACE(); \
-            eventLoop(); \
+            if (!eventManager.IsEmpty()) \
+                eventLoop(); \
             switch(instruction = READ_BYTE())
 
 #define DISPATCH() goto loop
@@ -578,8 +582,8 @@ namespace script
         CASE_CODE(SET_GLOBAL):
         {
             ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
-
-            {
+            m_CurrentGlobal->operator[](name->str) = PEEK(0);
+            /*{
                 auto it = m_CurrentGlobal->find(name->str);
                 if (it == m_CurrentGlobal->end())
                 {
@@ -589,42 +593,28 @@ namespace script
 
 
                 it->second = PEEK(0);
-            }
+            }*/
 
             DISPATCH();
         }
         CASE_CODE(GET_LOCAL):
         {
-            uint16_t constant = READ_SHORT();
 
-            PUSH(frame->slots[constant]);
+            PUSH(stackStart[READ_SHORT()]);
 
             DISPATCH();
         }
         CASE_CODE(SET_LOCAL):
         {
-            uint16_t constant = READ_SHORT();
-
-            frame->slots[constant] = PEEK(0);
-
-
+            stackStart[READ_SHORT()] = PEEK(0);
             DISPATCH();
         }
         CASE_CODE(JUMP_IF_FALSE):
         {
             uint16_t offset = READ_SHORT();
 
-            if (PEEK(0).IsBool())
-            {
-                if (PEEK(0).AsBool() == false)
-                {
-                    ip += offset;
-                }
-            }
-            else if (PEEK(0).IsNil())
-            {
+            if (isFalsy(PEEK(0)))
                 ip += offset;
-            }
 
             DISPATCH();
         }
@@ -670,12 +660,14 @@ namespace script
 
         completeCall:
 
-
+            
 
             switch (obj.GetObjectType())
             {
             case OBJ_FUNCTION:
             {
+                STORE_FRAME();
+
                 if (!Call((ObjFunction*)obj.ToObject(), argCount))
                 {
                     Error("Could not call function");
@@ -697,12 +689,11 @@ namespace script
                 m_CurrentFiber->stack.m_Top -= argCount + 1;
 
                 m_CurrentFiber->stack.Push(result);
-
-                LOAD_FRAME();
                 break;
             }
             case OBJ_CLASS:
             {
+                STORE_FRAME();
                 ObjClass* klass = (ObjClass*)obj.ToObject();
                 m_CurrentFiber->stack.m_Top[-argCount - 1] = Value(NewInstance(klass));
 
@@ -754,12 +745,14 @@ namespace script
 
                     m_CurrentFiber->stack.m_Top -= argCount + 1;
 
-                    m_CurrentFiber->stack.Push(result);
+                    PUSH(result);
 
                     LOAD_FRAME();
                 }
                 else
                 {
+                    STORE_FRAME();
+
                     if (!Call(bound->function, argCount))
                     {
                         Error("Failed to call bound instance method");
@@ -783,11 +776,8 @@ namespace script
         }
         CASE_CODE(CLASS):
         {
-            //uint16_t constant = READ_SHORT();
 
             ObjString* name = (ObjString*)READ_CONSTANT_LONG().ToObject();
-
-
             PUSH(Value(NewClass(name->str)));
 
             DISPATCH();
@@ -1122,24 +1112,7 @@ namespace script
         {
         case OBJ_FUNCTION:
         {
-            if (!((ObjFunction*)value.ToObject())->async)
-                return Call((ObjFunction*)value.ToObject(), argCount);
-            else
-            {
-                // The function is an async function
-
-                // Create a new fiber
-                ObjFiber* fiber = CreateFiber((ObjFunction*)value.ToObject());
-
-                // Set the caller to the current fiber
-                fiber->caller = m_CurrentFiber;
-
-                m_CurrentFiber = fiber;
-
-                return true;
-            }
-
-            break;
+            return Call((ObjFunction*)value.ToObject(), argCount);
         }
         case OBJ_NATIVE: 
         {

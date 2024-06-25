@@ -65,8 +65,9 @@ class HelloClass {
 		self.t = 100;
 	}
 
-	func print() {
+	func print(ee) {
 		std.println(self.t);
+		std.println(ee);
 	}
 }
 
@@ -74,13 +75,13 @@ var test = HelloClass();
 
 std.println(test.t);
 
-test.print();
+test.print(23);
 
 )";
 
 
 
-	script::ObjFunction* function = script::CompileScript(source);
+	script::ObjFunction* function = script::CompileScript(benchmark);
 
 	if (function == nullptr)
 	{

@@ -293,4 +293,9 @@ namespace script
 		}
 		
 	};
+
+	static inline bool isFalsy(Value val)
+	{
+		return IS_NIL(val) || IS_FALSE(val);
+	}
 }

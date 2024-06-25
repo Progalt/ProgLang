@@ -359,6 +359,11 @@ namespace script
 		EmitByte(byte2);
 	}
 
+	void Compiler::EmitShort(uint16_t s)
+	{
+		EmitBytes((s >> 8) & 0xFF, s & 0xFF);
+	}
+
 	void Compiler::EmitConstant(Value value)
 	{
 		GetCurrentChunk()->WriteConstant(value);
@@ -493,7 +498,7 @@ namespace script
 		Consume(TK_CLOSE_SQUARE, "Expected ']' at end of list");
 
 		EmitByte(OP_CREATE_LIST);
-		EmitBytes((size >> 8) & 0xFF, size & 0xFF);
+		EmitShort(size);
 	}
 
 	void Compiler::ArrayAccess(bool canAssign)
@@ -689,19 +694,15 @@ namespace script
 			Advance();
 			Expression();
 
-			uint8_t upper = arg >> 8;
-			uint8_t lower = (arg & 0xFF);
 
 			EmitByte(setOp);
-			EmitBytes(upper, lower);
+			EmitShort((uint16_t)arg);
 		}
 		else {
 			EmitByte(getOp);
 
-			uint8_t upper = arg >> 8;
-			uint8_t lower = (arg & 0xFF);
 
-			EmitBytes(upper, lower);
+			EmitShort((uint16_t)arg);
 		}
 
 
@@ -751,11 +752,7 @@ namespace script
 
 
 		EmitByte(defineOp);
-
-		uint8_t upper = global >> 8;
-		uint8_t lower = (global & 0xFF);
-
-		EmitBytes(upper, lower);
+		EmitShort(global);
 	}
 
 	void Compiler::DeclareVariable()
@@ -997,7 +994,7 @@ namespace script
 
 
 		EmitByte(OP_CLASS);
-		EmitBytes((nameConstant >> 8) && 0xFF, nameConstant & 0xFF);
+		EmitShort(nameConstant);
 
 		DefineVariable(nameConstant, false);
 
@@ -1050,7 +1047,6 @@ namespace script
 			compiler.EmitByte(OP_RETURN);
 
 			ObjFunction* func = compiler.EndCompiler();
-			func->async = async;
 
 			EmitConstant(Value(func));
 		}
@@ -1061,7 +1057,6 @@ namespace script
 			compiler.Block();
 
 			ObjFunction* func = compiler.EndCompiler();
-			func->async = async;
 
 			EmitConstant(Value(func));
 		}
@@ -1099,7 +1094,7 @@ namespace script
 		if (canAssign && Match(TK_ASSIGN)) {
 			Expression();
 			EmitByte(OP_SET_PROPERTY);
-			EmitBytes((name >> 8) & 0xFF, name & 0xFF);
+			EmitShort(name);
 		}
 		// TODO: Get invokes working for optimisation 
 		/*else if (Match(TK_OPEN_BRACE))
@@ -1111,7 +1106,7 @@ namespace script
 		}*/
 		else {
 			EmitByte(OP_GET_PROPERTY);
-			EmitBytes((name >> 8) & 0xFF, name & 0xFF);
+			EmitShort(name);
 		}
 	}
 
@@ -1150,7 +1145,7 @@ namespace script
 		Function(type);
 
 		EmitByte(OP_METHOD);
-		EmitBytes((name >> 8) & 0xFF, name & 0xFF);
+		EmitShort(name);
 	}
 
 	void Compiler::Self(bool canAssign)
@@ -1178,13 +1173,13 @@ namespace script
 			uint16_t asName = (uint16_t)GetCurrentChunk()->AddConstant(Value(memoryManager.AllocateString(parser.previous.value)));
 
 			EmitByte(OP_IMPORT_MODULE_AS);
-			EmitBytes((moduleName >> 8) & 0xFF, moduleName & 0xFF);
-			EmitBytes((asName >> 8) & 0xFF, asName & 0xFF);
+			EmitShort(moduleName);
+			EmitShort(asName);
 		}
 		else
 		{
 			EmitByte(OP_IMPORT_MODULE);
-			EmitBytes((moduleName >> 8) & 0xFF, moduleName & 0xFF);
+			EmitShort(moduleName);
 		}
 		
 		Consume(TK_SEMICOLON, "Expected ';' after import statement.");
@@ -1205,6 +1200,9 @@ namespace script
 			ErrorAt(parser.current, "Too many arguments in function call. Max 16 arguments.");
 		}
 
+		// By using this of having a different op code for each argument we save a byte per function call
+		// Which for big projects can add up
+		// Also saves a read in the VM 
 		EmitByte(OP_CALL_0 + argCount);
 	}
 
@@ -1239,8 +1237,7 @@ namespace script
 		if (offset > UINT16_MAX) 
 			Error("Loop body too large");
 
-		EmitByte((offset >> 8) & 0xff);
-		EmitByte(offset & 0xff);
+		EmitShort((uint16_t)offset);
 	}
 
 	void Compiler::PatchJump(int offset)

@@ -152,8 +152,6 @@ namespace script
 		int arity = 0;
 		ObjString* name;
 
-		bool async = false;
-
 		std::string ToString() override { return "function"; }
 	};
 
@@ -227,18 +225,6 @@ namespace script
 	};
 
 	ObjModule* CreateModule(ObjString* name);
-
-	class ObjUserData : public Object
-	{
-	public:
-
-		void Delete() override; 
-
-		void* userData;
-		std::function<void(void*)> destructor;
-	};
-
-	ObjUserData* CreateUserData();
 
 	struct CallFrame
 	{

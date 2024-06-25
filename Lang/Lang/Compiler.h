@@ -95,6 +95,7 @@ namespace script
 		void EmitReturn();
 		void EmitBytes(uint8_t byte1, uint8_t byte2);
 		void EmitConstant(Value value);
+		void EmitShort(uint16_t s);
 
 		// Parsing
 

@@ -34,6 +34,17 @@
 #define IS_OBJ(value) \
     (((value) & (QNAN | SIGN_BIT)) == (QNAN | SIGN_BIT))
 
+
+// Accessors
+
+#define IS_FALSE(v) (v.value == FALSE_VAL)
+#define IS_NIL(v) (v.value == NIL_VAL)
+
+#else
+
+#define IS_FALSE(v) (v.type == VALUE_FALSE)
+#define IS_NIL(v) (v.type == VALUE_NIL)
+
 #endif
 
 namespace script
@@ -43,9 +54,7 @@ namespace script
 		VALUE_NIL, 
 		VALUE_NUMBER,
 		VALUE_BOOL,
-		
 		VALUE_OBJ,
-
 		VALUE_TRUE,
 		VALUE_FALSE,
 	};

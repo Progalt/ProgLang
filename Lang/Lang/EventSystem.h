@@ -47,6 +47,7 @@ namespace script
 		{
 			Event evnt = m_EventQueue.front();
 			m_EventQueue.pop();
+			size--;
 
 			return evnt;
 		}
@@ -54,12 +55,12 @@ namespace script
 		void Push(Event evnt)
 		{
 			m_EventQueue.push(evnt);
+			size++;
 		}
 
 
-	private:
-
 		std::queue<Event> m_EventQueue;
+		size_t size = 0;
 
 	};
 
